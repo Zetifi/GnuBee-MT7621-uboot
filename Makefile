@@ -252,7 +252,7 @@ endif
 ifeq ($(MT7621_CPU_875MHZ), y)
 		echo "0 224a00c0"|xxd -r|dd bs=1 seek=32 of=uboot_a.bin conv=notrunc
 endif
-ifeq ($(DDR_ACT_SETTING), y)		
+ifeq ($(DDR_ACT_SETTING), y)
 		./mt7621_ddr.sh uboot_a.bin uboot_a.bin mt7621_ddr_param.txt $(DDR_CHIP) $(CFG_ENV_IS)
 		echo "0 10"|xxd -r|dd bs=1 count=1 seek=38 of=uboot_a.bin conv=notrunc
 endif
@@ -278,15 +278,17 @@ ifeq ($(MT7621_CPU_875MHZ), y)
 		echo "0 224a00c0"|xxd -r|dd bs=1 of=uboot_a.bin seek=$(shell echo "(($(shell stat -c %s uboot.bin)+32))" |bc)  conv=notrunc
 
 endif
-		echo "0 $(MT7621_DDR_SPEED)"|xxd -r|dd bs=1 count=1 of=uboot_a.bin seek=$(shell echo "(($(shell stat -c %s uboot.bin)+39))" |bc) conv=notrunc	
-ifeq ($(DDR_ACT_SETTING), y)	
+		echo "0 $(MT7621_DDR_SPEED)"|xxd -r|dd bs=1 count=1 of=uboot_a.bin seek=$(shell echo "(($(shell stat -c %s uboot.bin)+39))" |bc) conv=notrunc
+ifeq ($(DDR_ACT_SETTING), y)
 		./mt7621_ddr.sh uboot_a.bin uboot_a.bin mt7621_ddr_param.txt $(DDR_CHIP) $(CFG_ENV_IS)
 		echo "0 10"|xxd -r|dd bs=1 count=1 of=uboot_a.bin seek=$(shell echo "(($(shell stat -c %s uboot.bin)+38))" |bc) conv=notrunc
 endif
 #SLT baudrate echo "0 00c20100"|xxd -r|dd bs=1 of=uboot_a.bin seek=$(shell echo "(($(shell stat -c %s uboot.bin)+304))" |bc) conv=notrunc
-		
+
 		mv uboot_a.bin uboot.bin
-endif		
+		dd if=/dev/zero of=image.bin bs=1 count=196608
+		dd if=uboot.bin of=image.bin conv=notrunc
+endif
 endif
 
 uboot.bin:	u-boot
@@ -356,14 +358,14 @@ u-boot.dis:	u-boot
 #		UNDEF_SYM=`$(OBJDUMP) -x $(LIBS) |sed  -n -e 's/.*\(__u_boot_cmd_.*\)/-u\1/p'|sort|uniq`;\
 #		$(LD) $(LDFLAGS) $$UNDEF_SYM $(OBJS) \
 #			--start-group $(LIBS) --end-group -L $(shell dirname) $(CC) $(CFLAGS) -print-libgcc-file-name -lgcc \
-#			-Map u-boot.map -o u-boot 
-			
+#			-Map u-boot.map -o u-boot
+
 u-boot:		depend $(SUBDIRS) $(OBJS) $(LIBS) $(LDSCRIPT)
 		UNDEF_SYM=`$(OBJDUMP) -x $(LIBS) |sed  -n -e 's/.*\(__u_boot_cmd_.*\)/-u\1/p'|sort|uniq`;\
 		$(LD) $(LDFLAGS) $$UNDEF_SYM $(OBJS) \
 			--start-group $(LIBS) --end-group $(PLATFORM_LIBS) \
 			-Map u-boot.map -o u-boot
-			
+
 show_path:
 	echo $(OBJDUMP)
 
