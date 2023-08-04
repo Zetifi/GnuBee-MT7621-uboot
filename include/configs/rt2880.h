@@ -364,7 +364,7 @@ extern unsigned int CFG_BLOCKSIZE;
 #define BOOTARGS_BOOT_B          "osflag=" STR(BOOT_FLAG_IMAGE_B) "console=ttyS0,57600 root=/dev/mtdblock8"
 #define CONFIG_BOOTARGS          BOOTARGS_BOOT_A
 
-#define CFG_ENV_SECT_SIZE CFG_CONFIG_SIZE
+#define CFG_ENV_SECT_SIZE        CFG_CONFIG_SIZE
 #define CFG_ENV_SIZE 0x1000
 
 #if defined(SMALL_UBOOT_PARTITION)

@@ -2189,9 +2189,9 @@ void board_init_r(gd_t *id, ulong dest_addr)
 		//         oled_load_banner();
 		// #endif
 		char *argv[2];
-		if (0x5A5A5A5A == sys_bootflag) {
+		if (BOOT_FLAG_IMAGE_A == sys_bootflag) {
 			sprintf(addr_str, "0x%X", CFG_KERN_ADDR_IMG_A);
-		} else if (0xA5A5A5A5 == sys_bootflag) {
+		} else if (BOOT_FLAG_IMAGE_B == sys_bootflag) {
 			sprintf(addr_str, "0x%X", CFG_KERN_ADDR_IMG_B);
 		} else {
 			// FIXME : handle incorrect bootflag in the uboot_env parameter
