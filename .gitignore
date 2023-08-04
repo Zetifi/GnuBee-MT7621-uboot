@@ -1,6 +1,7 @@
 *.orig
 *.o
 *.a
+*.bin
 u-boot*
 .depend
 .config
@@ -13,3 +14,4 @@ tools/mkimage
 *~
 *.old
 tags
+
