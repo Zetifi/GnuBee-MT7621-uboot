@@ -8,6 +8,7 @@ LIB   = libperipheral.a
 OBJS += led.o
 OBJS += wps.o
 OBJS += oled.o
+OBJS += gpio.o
 
 all:    $(LIB)
 $(LIB): $(START) $(OBJS)

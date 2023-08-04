@@ -66,7 +66,6 @@
  *	Next step:	none
  */
 
-
 #include <common.h>
 #include <watchdog.h>
 #include <command.h>
@@ -74,7 +73,7 @@
 #include "bootp.h"
 #include "tftp.h"
 #include "rarp.h"
-//#include "nfs.h"
+// #include "nfs.h"
 
 #include "httpd.h"
 
@@ -84,7 +83,7 @@
 #include <status_led.h>
 #include <miiphy.h>
 #endif
-//!增加的头文件
+//! 增加的头文件
 #ifdef OLED_1_3
 #include <oled.h>
 #endif
@@ -96,73 +95,78 @@
 #include "../httpd/uip_arp.h"
 #include "../httpd/httpd.h"
 
-
 #if (CONFIG_COMMANDS & CFG_CMD_NET)
 DECLARE_GLOBAL_DATA_PTR;
-#define ARP_TIMEOUT		3		/* Seconds before trying ARP again */
-#ifndef	CONFIG_NET_RETRY_COUNT
-# define ARP_TIMEOUT_COUNT	8		/* # of timeouts before giving up  */
+#define ARP_TIMEOUT 3 /* Seconds before trying ARP again */
+#ifndef CONFIG_NET_RETRY_COUNT
+#define ARP_TIMEOUT_COUNT 8 /* # of timeouts before giving up  */
 #else
-# define ARP_TIMEOUT_COUNT  (CONFIG_NET_RETRY_COUNT)
+#define ARP_TIMEOUT_COUNT (CONFIG_NET_RETRY_COUNT)
 #endif
 
 #if 0
 #define ET_DEBUG
 #endif
 unsigned char *webfailsafe_data_pointer = NULL;
-int       webfailsafe_is_running = 0;
+int webfailsafe_is_running = 0;
 extern volatile int webfailsafe_upgrade_type;
-int       webfailsafe_ready_for_upgrade = 0;
+int webfailsafe_ready_for_upgrade = 0;
 extern cmd_tbl_t *p_gmdtp;
 /** BOOTP EXTENTIONS **/
 
-IPaddr_t	NetOurSubnetMask=0;		/* Our subnet mask (0=unknown)	*/
-IPaddr_t	NetOurGatewayIP=0;		/* Our gateways IP address	*/
-IPaddr_t	NetOurDNSIP=0;			/* Our DNS IP address		*/
+IPaddr_t NetOurSubnetMask = 0; /* Our subnet mask (0=unknown)	*/
+IPaddr_t NetOurGatewayIP = 0;	 /* Our gateways IP address	*/
+IPaddr_t NetOurDNSIP = 0;			 /* Our DNS IP address		*/
 #if (CONFIG_BOOTP_MASK & CONFIG_BOOTP_DNS2)
-IPaddr_t	NetOurDNS2IP=0;			/* Our 2nd DNS IP address	*/
+IPaddr_t NetOurDNS2IP = 0; /* Our 2nd DNS IP address	*/
 #endif
-char		NetOurNISDomain[32]={0,};	/* Our NIS domain		*/
-char		NetOurHostName[32]={0,};	/* Our hostname			*/
-char		NetOurRootPath[64]={0,};	/* Our bootpath			*/
-ushort		NetBootFileSize=0;		/* Our bootfile size in blocks	*/
+char NetOurNISDomain[32] = {
+		0,
+}; /* Our NIS domain		*/
+char NetOurHostName[32] = {
+		0,
+}; /* Our hostname			*/
+char NetOurRootPath[64] = {
+		0,
+};													/* Our bootpath			*/
+ushort NetBootFileSize = 0; /* Our bootfile size in blocks	*/
 
 /** END OF BOOTP EXTENTIONS **/
 
-ulong		NetBootFileXferSize;	/* The actual transferred size of the bootfile (in bytes) */
-uchar		NetOurEther[6];		/* Our ethernet address			*/
-uchar		NetServerEther[6] =	/* Boot server enet address		*/
-			{ 0, 0, 0, 0, 0, 0 };
-IPaddr_t	NetOurIP;		/* Our IP addr (0 = unknown)		*/
-IPaddr_t	NetServerIP;		/* Our IP addr (0 = unknown)		*/
-volatile uchar *NetRxPkt;		/* Current receive packet		*/
-int		NetRxPktLen;		/* Current rx packet length		*/
-unsigned	NetIPID;		/* IP packet ID				*/
-uchar		NetBcastAddr[6] =	/* Ethernet bcast address		*/
-			{ 0xff, 0xff, 0xff, 0xff, 0xff, 0xff };
-uchar		NetEtherNullAddr[6] =
-			{ 0, 0, 0, 0, 0, 0 };
+ulong NetBootFileXferSize; /* The actual transferred size of the bootfile (in bytes) */
+uchar NetOurEther[6];			 /* Our ethernet address			*/
+uchar NetServerEther[6] =	 /* Boot server enet address		*/
+		{0, 0, 0, 0, 0, 0};
+IPaddr_t NetOurIP;				/* Our IP addr (0 = unknown)		*/
+IPaddr_t NetServerIP;			/* Our IP addr (0 = unknown)		*/
+volatile uchar *NetRxPkt; /* Current receive packet		*/
+int NetRxPktLen;					/* Current rx packet length		*/
+unsigned NetIPID;					/* IP packet ID				*/
+uchar NetBcastAddr[6] =		/* Ethernet bcast address		*/
+		{0xff, 0xff, 0xff, 0xff, 0xff, 0xff};
+uchar NetEtherNullAddr[6] =
+		{0, 0, 0, 0, 0, 0};
 #if (CONFIG_COMMANDS & CFG_CMD_CDP)
-uchar		NetCDPAddr[6] =		/* Ethernet bcast address		*/
-			{ 0x01, 0x00, 0x0c, 0xcc, 0xcc, 0xcc };
+uchar NetCDPAddr[6] = /* Ethernet bcast address		*/
+		{0x01, 0x00, 0x0c, 0xcc, 0xcc, 0xcc};
 #endif
-int		NetState;		/* Network loop state			*/
+int NetState; /* Network loop state			*/
 #ifdef CONFIG_NET_MULTI
-int		NetRestartWrap = 0;	/* Tried all network devices		*/
-static int	NetRestarted = 0;	/* Network loop restarted		*/
-static int	NetDevExists = 0;	/* At least one device configured	*/
+int NetRestartWrap = 0;			 /* Tried all network devices		*/
+static int NetRestarted = 0; /* Network loop restarted		*/
+static int NetDevExists = 0; /* At least one device configured	*/
 #endif
 
 #ifdef CONFIG_NET_VLAN
 /* XXX in both little & big endian machines 0xFFFF == ntohs(-1) */
-ushort		NetOurVLAN = 0xFFFF;		/* default is without VLAN	*/
-ushort		NetOurNativeVLAN = 0xFFFF;	/* ditto			*/
+ushort NetOurVLAN = 0xFFFF;				/* default is without VLAN	*/
+ushort NetOurNativeVLAN = 0xFFFF; /* ditto			*/
 #endif
 
-char		BootFile[128];		/* Boot File name			*/
+char BootFile[128]; /* Boot File name			*/
 
 #if (CONFIG_COMMANDS & CFG_CMD_PING)
-IPaddr_t	NetPingIP;		/* the ip address to ping 		*/
+IPaddr_t NetPingIP; /* the ip address to ping 		*/
 
 static void PingStart(void);
 #endif
@@ -172,100 +176,97 @@ static void CDPStart(void);
 #endif
 //!
 #if (CONFIG_COMMANDS & CFG_CMD_SNTP)
-IPaddr_t NetNtpServerIP;	/* NTP server IP address */
-int NetTimeOffset = 0;		/* offset time from UTC */
-#endif /* CFG_CMD_SNTP */
-
+IPaddr_t NetNtpServerIP; /* NTP server IP address */
+int NetTimeOffset = 0;	 /* offset time from UTC */
+#endif									 /* CFG_CMD_SNTP */
 
 #ifdef CONFIG_NETCONSOLE
 void NcStart(void);
 int nc_input_packet(uchar *pkt, unsigned dest, unsigned src, unsigned len);
 #endif
 
-  
-volatile uchar	*PktBuf;
-	
-volatile uchar	Pkt_Buf_Pool[(PKTBUFSRX+2) * PKTSIZE_ALIGN + PKTALIGN];
+volatile uchar *PktBuf;
 
-//FRANK request
+volatile uchar Pkt_Buf_Pool[(PKTBUFSRX + 2) * PKTSIZE_ALIGN + PKTALIGN];
+
+// FRANK request
 //
 
 volatile uchar *NetRxPackets[PKTBUFSRX]; /* Receive packets			*/
 
-static rxhand_f *packetHandler;		/* Current RX packet handler		*/
-static thand_f *timeHandler;		/* Current timeout handler		*/
-static ulong	timeStart;		/* Time base value			*/
-static ulong	timeDelta;		/* Current timeout value		*/
-volatile uchar *NetTxPacket = 0;	/* THE transmit packet			*/
+static rxhand_f *packetHandler;	 /* Current RX packet handler		*/
+static thand_f *timeHandler;		 /* Current timeout handler		*/
+static ulong timeStart;					 /* Time base value			*/
+static ulong timeDelta;					 /* Current timeout value		*/
+volatile uchar *NetTxPacket = 0; /* THE transmit packet			*/
 
-static int net_check_prereq (proto_t protocol);
+static int net_check_prereq(proto_t protocol);
 
 /**********************************************************************/
 
-IPaddr_t	NetArpWaitPacketIP;
-IPaddr_t	NetArpWaitReplyIP;
-uchar	       *NetArpWaitPacketMAC;	/* MAC address of waiting packet's destination	*/
-uchar          *NetArpWaitTxPacket;	/* THE transmit packet			*/
-int		NetArpWaitTxPacketSize;
-uchar 		NetArpWaitPacketBuf[PKTSIZE_ALIGN + PKTALIGN];
-ulong		NetArpWaitTimerStart;
-int		NetArpWaitTry;
-
+IPaddr_t NetArpWaitPacketIP;
+IPaddr_t NetArpWaitReplyIP;
+uchar *NetArpWaitPacketMAC; /* MAC address of waiting packet's destination	*/
+uchar *NetArpWaitTxPacket;	/* THE transmit packet			*/
+int NetArpWaitTxPacketSize;
+uchar NetArpWaitPacketBuf[PKTSIZE_ALIGN + PKTALIGN];
+ulong NetArpWaitTimerStart;
+int NetArpWaitTry;
 
 //===================================================
 /*=======================================*/
 
-
-
-
-extern VALID_BUFFER_STRUCT  rt2880_free_buf_list;
-//kaiker
+extern VALID_BUFFER_STRUCT rt2880_free_buf_list;
+// kaiker
 extern BUFFER_ELEM *rt2880_free_buf_entry_dequeue(VALID_BUFFER_STRUCT *hdr);
 
-
-
 /*=======================================*/
 //===================================================
 
-void ArpRequest (void)
+void ArpRequest(void)
 {
 	int i;
 	volatile uchar *pkt;
 	ARP_t *arp;
 
 #ifdef ET_DEBUG
-	printf ("ARP broadcast %d\n", NetArpWaitTry);
+	printf("ARP broadcast %d\n", NetArpWaitTry);
 #endif
 	pkt = NetTxPacket;
 
-	pkt += NetSetEther (pkt, NetBcastAddr, PROT_ARP);
+	pkt += NetSetEther(pkt, NetBcastAddr, PROT_ARP);
 
-	arp = (ARP_t *) pkt;
+	arp = (ARP_t *)pkt;
 
-	arp->ar_hrd = htons (ARP_ETHER);
-	arp->ar_pro = htons (PROT_IP);
+	arp->ar_hrd = htons(ARP_ETHER);
+	arp->ar_pro = htons(PROT_IP);
 	arp->ar_hln = 6;
 	arp->ar_pln = 4;
-	arp->ar_op = htons (ARPOP_REQUEST);
+	arp->ar_op = htons(ARPOP_REQUEST);
 
-	memcpy (&arp->ar_data[0], NetOurEther, 6);		/* source ET addr       */
-	NetWriteIP ((uchar *) & arp->ar_data[6], NetOurIP);	/* source IP addr       */
-	for (i = 10; i < 16; ++i) {
-		arp->ar_data[i] = 0;				/* dest ET addr = 0     */
+	memcpy(&arp->ar_data[0], NetOurEther, 6);				 /* source ET addr       */
+	NetWriteIP((uchar *)&arp->ar_data[6], NetOurIP); /* source IP addr       */
+	for (i = 10; i < 16; ++i)
+	{
+		arp->ar_data[i] = 0; /* dest ET addr = 0     */
 	}
 
 	if ((NetArpWaitPacketIP & NetOurSubnetMask) !=
-	    (NetOurIP & NetOurSubnetMask)) {
-		if (NetOurGatewayIP == 0) {
-			puts ("## Warning: gatewayip needed but not set\n");
+			(NetOurIP & NetOurSubnetMask))
+	{
+		if (NetOurGatewayIP == 0)
+		{
+			puts("## Warning: gatewayip needed but not set\n");
 		}
 		NetArpWaitReplyIP = NetOurGatewayIP;
-	} else {
+	}
+	else
+	{
 		NetArpWaitReplyIP = NetArpWaitPacketIP;
 	}
 
-	NetWriteIP ((uchar *) & arp->ar_data[16], NetArpWaitReplyIP);
-	(void) eth_send (NetTxPacket, (pkt - NetTxPacket) + ARP_HDR_SIZE);
+	NetWriteIP((uchar *)&arp->ar_data[16], NetArpWaitReplyIP);
+	(void)eth_send(NetTxPacket, (pkt - NetTxPacket) + ARP_HDR_SIZE);
 }
 
 void ArpTimeoutCheck(void)
@@ -278,14 +279,18 @@ void ArpTimeoutCheck(void)
 	t = get_timer(0);
 
 	/* check for arp timeout */
-	if ((t - NetArpWaitTimerStart) > ARP_TIMEOUT * CFG_HZ) {
+	if ((t - NetArpWaitTimerStart) > ARP_TIMEOUT * CFG_HZ)
+	{
 		NetArpWaitTry++;
 
-		if (NetArpWaitTry >= ARP_TIMEOUT_COUNT) {
-			puts ("\nARP Retry count exceeded; starting again\n");
+		if (NetArpWaitTry >= ARP_TIMEOUT_COUNT)
+		{
+			puts("\nARP Retry count exceeded; starting again\n");
 			NetArpWaitTry = 0;
 			NetStartAgain();
-		} else {
+		}
+		else
+		{
 			NetArpWaitTimerStart = t;
 			puts("\nArpTimeoutCheck \n");
 			ArpRequest();
@@ -298,9 +303,7 @@ void ArpTimeoutCheck(void)
  *	Main network processing loop.
  */
 
-
-int
-NetLoop(proto_t protocol)
+int NetLoop(proto_t protocol)
 {
 	DECLARE_GLOBAL_DATA_PTR;
 
@@ -317,39 +320,42 @@ NetLoop(proto_t protocol)
 	NetArpWaitPacketIP = 0;
 	NetArpWaitReplyIP = 0;
 	NetArpWaitTxPacket = NULL;
-#ifdef DEBUG	
-   printf("File: %s, Func: %s, Line: %d\n", __FILE__,__FUNCTION__ , __LINE__);
-#endif   
-//
-	if (!NetTxPacket) {
-		int	i;
+#ifdef DEBUG
+	printf("File: %s, Func: %s, Line: %d\n", __FILE__, __FUNCTION__, __LINE__);
+#endif
+	//
+	if (!NetTxPacket)
+	{
+		int i;
 		BUFFER_ELEM *buf;
 		/*
 		 *	Setup packet buffers, aligned correctly.
 		 */
-		buf = rt2880_free_buf_entry_dequeue(&rt2880_free_buf_list); 
+		buf = rt2880_free_buf_entry_dequeue(&rt2880_free_buf_list);
 		NetTxPacket = buf->pbuf;
 
-		debug("\n NetTxPacket = 0x%08X \n",NetTxPacket);
-		for (i = 0; i < NUM_RX_DESC; i++) {
+		debug("\n NetTxPacket = 0x%08X \n", NetTxPacket);
+		for (i = 0; i < NUM_RX_DESC; i++)
+		{
 
-			buf = rt2880_free_buf_entry_dequeue(&rt2880_free_buf_list); 
-			if(buf == NULL)
+			buf = rt2880_free_buf_entry_dequeue(&rt2880_free_buf_list);
+			if (buf == NULL)
 			{
 				printf("\n Packet Buffer is empty ! \n");
 
 				return (-1);
 			}
 			NetRxPackets[i] = buf->pbuf;
-			//printf("\n NetRxPackets[%d] = 0x%08X\n",i,NetRxPackets[i]);
+			// printf("\n NetRxPackets[%d] = 0x%08X\n",i,NetRxPackets[i]);
 		}
 	}
-	
+
 	NetTxPacket = KSEG1ADDR(NetTxPacket);
 
-	printf("\n KSEG1ADDR(NetTxPacket) = 0x%08X \n",NetTxPacket);
+	printf("\n KSEG1ADDR(NetTxPacket) = 0x%08X \n", NetTxPacket);
 
-	if (!NetArpWaitTxPacket) {
+	if (!NetArpWaitTxPacket)
+	{
 		NetArpWaitTxPacket = &NetArpWaitPacketBuf[0] + (PKTALIGN - 1);
 		NetArpWaitTxPacket -= (ulong)NetArpWaitTxPacket % PKTALIGN;
 		NetArpWaitTxPacketSize = 0;
@@ -359,18 +365,18 @@ NetLoop(proto_t protocol)
 #ifdef CONFIG_NET_MULTI
 	eth_set_current();
 #endif
-	//printf("\n NetLoop,call eth_init ! \n");
+	// printf("\n NetLoop,call eth_init ! \n");
 	if (eth_init(bd) < 0)
 	{
-	    printf("\n eth_init is fail !!\n");
-		return(-1);
-	}	
+		printf("\n eth_init is fail !!\n");
+		return (-1);
+	}
 
 restart:
 #ifdef CONFIG_NET_MULTI
-	memcpy (NetOurEther, eth_get_dev()->enetaddr, 6);
+	memcpy(NetOurEther, eth_get_dev()->enetaddr, 6);
 #else
-	memcpy (NetOurEther, bd->bi_enetaddr, 6);
+	memcpy(NetOurEther, bd->bi_enetaddr, 6);
 #endif
 
 	NetState = NETLOOP_CONTINUE;
@@ -381,7 +387,8 @@ restart:
 	 *	packets and timer events.
 	 */
 
-	switch (protocol) {
+	switch (protocol)
+	{
 #if (CONFIG_COMMANDS & CFG_CMD_NFS)
 	case NFS:
 #endif
@@ -391,13 +398,13 @@ restart:
 	case NETCONS:
 	case TFTP:
 		NetCopyIP(&NetOurIP, &bd->bi_ip_addr);
-		NetOurGatewayIP = getenv_IPaddr ("gatewayip");
-		NetOurSubnetMask= getenv_IPaddr ("netmask");
+		NetOurGatewayIP = getenv_IPaddr("gatewayip");
+		NetOurSubnetMask = getenv_IPaddr("netmask");
 #ifdef CONFIG_NET_VLAN
 		NetOurVLAN = getenv_VLAN("vlan");
 		NetOurNativeVLAN = getenv_VLAN("nvlan");
 #endif
-		NetServerIP = getenv_IPaddr ("serverip");
+		NetServerIP = getenv_IPaddr("serverip");
 		break;
 #if 0
 	case BOOTP:
@@ -423,7 +430,8 @@ restart:
 		break;
 	}
 
-	switch (net_check_prereq (protocol)) {
+	switch (net_check_prereq(protocol))
+	{
 	case 1:
 		/* network not configured */
 		return (-1);
@@ -438,7 +446,8 @@ restart:
 #ifdef CONFIG_NET_MULTI
 		NetDevExists = 1;
 #endif
-		switch (protocol) {
+		switch (protocol)
+		{
 		case TFTP:
 			/* always use ARP to get server ethernet address */
 			TftpStart();
@@ -449,8 +458,8 @@ restart:
 			/* Start with a clean slate... */
 			BootpTry = 0;
 			NetOurIP = 0;
-			NetServerIP = getenv_IPaddr ("serverip");
-			DhcpRequest();		/* Basically same as BOOTP */
+			NetServerIP = getenv_IPaddr("serverip");
+			DhcpRequest(); /* Basically same as BOOTP */
 			break;
 #endif /* CFG_CMD_DHCP */
 
@@ -498,10 +507,13 @@ restart:
 	/*
 	 * Echo the inverted link state to the fault LED.
 	 */
-	if(miiphy_link(CFG_FAULT_MII_ADDR)) {
-		status_led_set (STATUS_LED_RED, STATUS_LED_OFF);
-	} else {
-		status_led_set (STATUS_LED_RED, STATUS_LED_ON);
+	if (miiphy_link(CFG_FAULT_MII_ADDR))
+	{
+		status_led_set(STATUS_LED_RED, STATUS_LED_OFF);
+	}
+	else
+	{
+		status_led_set(STATUS_LED_RED, STATUS_LED_ON);
 	}
 #endif /* CFG_FAULT_ECHO_LINK_DOWN, ... */
 #endif /* CONFIG_MII, ... */
@@ -510,7 +522,8 @@ restart:
 	 *	Main packet reception loop.  Loop receiving packets until
 	 *	someone sets `NetQuit'.
 	 */
-	for (;;) {		
+	for (;;)
+	{
 		WATCHDOG_RESET();
 #ifdef CONFIG_SHOW_ACTIVITY
 		{
@@ -522,14 +535,15 @@ restart:
 		 *	Check the ethernet for a new packet.  The ethernet
 		 *	receive routine will process it.
 		 */
-			eth_rx();
+		eth_rx();
 
 		/*
 		 *	Abort if ctrl-c was pressed.
 		 */
-		if (ctrlc()) {
+		if (ctrlc())
+		{
 			eth_halt();
-			puts ("\nAbort\n");
+			puts("\nAbort\n");
 			return (-1);
 		}
 
@@ -539,7 +553,8 @@ restart:
 		 *	Check for a timeout, and run the timeout handler
 		 *	if we have one.
 		 */
-		if (timeHandler && ((get_timer(0) - timeStart) > timeDelta)) {
+		if (timeHandler && ((get_timer(0) - timeStart) > timeDelta))
+		{
 			thand_f *x;
 
 #if defined(CONFIG_MII) || (CONFIG_COMMANDS & CFG_CMD_MII)
@@ -547,10 +562,13 @@ restart:
 			/*
 			 * Echo the inverted link state to the fault LED.
 			 */
-			if(miiphy_link(CFG_FAULT_MII_ADDR)) {
-				status_led_set (STATUS_LED_RED, STATUS_LED_OFF);
-			} else {
-				status_led_set (STATUS_LED_RED, STATUS_LED_ON);
+			if (miiphy_link(CFG_FAULT_MII_ADDR))
+			{
+				status_led_set(STATUS_LED_RED, STATUS_LED_OFF);
+			}
+			else
+			{
+				status_led_set(STATUS_LED_RED, STATUS_LED_ON);
 			}
 #endif /* CFG_FAULT_ECHO_LINK_DOWN, ... */
 #endif /* CONFIG_MII, ... */
@@ -559,8 +577,8 @@ restart:
 			(*x)();
 		}
 
-
-		switch (NetState) {
+		switch (NetState)
+		{
 
 		case NETLOOP_RESTART:
 #ifdef CONFIG_NET_MULTI
@@ -569,11 +587,12 @@ restart:
 			goto restart;
 
 		case NETLOOP_SUCCESS:
-			if (NetBootFileXferSize > 0) {
+			if (NetBootFileXferSize > 0)
+			{
 				char buf[10];
 				printf("Bytes transferred = %ld (%lx hex)\n",
-					NetBootFileXferSize,
-					NetBootFileXferSize);
+							 NetBootFileXferSize,
+							 NetBootFileXferSize);
 				sprintf(buf, "%lx", NetBootFileXferSize);
 				setenv("filesize", buf);
 
@@ -598,47 +617,55 @@ startAgainTimeout(void)
 }
 
 static void
-startAgainHandler(uchar * pkt, unsigned dest, unsigned src, unsigned len)
+startAgainHandler(uchar *pkt, unsigned dest, unsigned src, unsigned len)
 {
 	/* Totally ignore the packet */
 }
 
-void NetStartAgain (void)
+void NetStartAgain(void)
 {
-#ifdef	CONFIG_NET_MULTI
+#ifdef CONFIG_NET_MULTI
 	DECLARE_GLOBAL_DATA_PTR;
 #endif
 	char *nretry;
 	int noretry = 0, once = 0;
 
-	if ((nretry = getenv ("netretry")) != NULL) {
-		noretry = (strcmp (nretry, "no") == 0);
-		once = (strcmp (nretry, "once") == 0);
+	if ((nretry = getenv("netretry")) != NULL)
+	{
+		noretry = (strcmp(nretry, "no") == 0);
+		once = (strcmp(nretry, "once") == 0);
 	}
-	if (noretry) {
-		eth_halt ();
+	if (noretry)
+	{
+		eth_halt();
 		NetState = NETLOOP_FAIL;
 		return;
 	}
 #ifndef CONFIG_NET_MULTI
-	NetSetTimeout (10 * CFG_HZ, startAgainTimeout);
-	NetSetHandler (startAgainHandler);
-#else	/* !CONFIG_NET_MULTI*/
-	eth_halt ();
-	eth_try_another (!NetRestarted);
-	eth_init (gd->bd);
-	if (NetRestartWrap) {
+	NetSetTimeout(10 * CFG_HZ, startAgainTimeout);
+	NetSetHandler(startAgainHandler);
+#else	 /* !CONFIG_NET_MULTI*/
+	eth_halt();
+	eth_try_another(!NetRestarted);
+	eth_init(gd->bd);
+	if (NetRestartWrap)
+	{
 		NetRestartWrap = 0;
-		if (NetDevExists && !once) {
-			NetSetTimeout (10UL * CFG_HZ, startAgainTimeout);
-			NetSetHandler (startAgainHandler);
-		} else {
+		if (NetDevExists && !once)
+		{
+			NetSetTimeout(10UL * CFG_HZ, startAgainTimeout);
+			NetSetHandler(startAgainHandler);
+		}
+		else
+		{
 			NetState = NETLOOP_FAIL;
 		}
-	} else {
+	}
+	else
+	{
 		NetState = NETLOOP_RESTART;
 	}
-#endif	/* CONFIG_NET_MULTI */
+#endif /* CONFIG_NET_MULTI */
 }
 
 /**********************************************************************/
@@ -646,34 +673,31 @@ void NetStartAgain (void)
  *	Miscelaneous bits.
  */
 
-void
-NetSetHandler(rxhand_f * f)
+void NetSetHandler(rxhand_f *f)
 {
 	packetHandler = f;
 }
 
-
-void
-NetSetTimeout(ulong iv, thand_f * f)
+void NetSetTimeout(ulong iv, thand_f *f)
 {
-	if (iv == 0) {
+	if (iv == 0)
+	{
 		timeHandler = (thand_f *)0;
-	} else {
+	}
+	else
+	{
 		timeHandler = f;
 		timeStart = get_timer(0);
 		timeDelta = iv;
 	}
 }
 
-
-void
-NetSendPacket(volatile uchar * pkt, int len)
+void NetSendPacket(volatile uchar *pkt, int len)
 {
-	(void) eth_send(pkt, len);
+	(void)eth_send(pkt, len);
 }
 
-int
-NetSendUDPPacket(uchar *ether, IPaddr_t dest, int dport, int sport, int len)
+int NetSendUDPPacket(uchar *ether, IPaddr_t dest, int dport, int sport, int len)
 {
 	uchar *pkt;
 
@@ -686,7 +710,8 @@ NetSendUDPPacket(uchar *ether, IPaddr_t dest, int dport, int sport, int len)
 		ether = NetBcastAddr;
 
 	/* if MAC address was not discovered yet, save the packet and do an ARP request */
-	if (memcmp(ether, NetEtherNullAddr, 6) == 0) {
+	if (memcmp(ether, NetEtherNullAddr, 6) == 0)
+	{
 
 #ifdef ET_DEBUG
 		printf("sending ARP for %08lx\n", dest);
@@ -696,9 +721,9 @@ NetSendUDPPacket(uchar *ether, IPaddr_t dest, int dport, int sport, int len)
 		NetArpWaitPacketMAC = ether;
 
 		pkt = NetArpWaitTxPacket;
-		pkt += NetSetEther (pkt, NetArpWaitPacketMAC, PROT_IP);
+		pkt += NetSetEther(pkt, NetArpWaitPacketMAC, PROT_IP);
 
-		NetSetIP (pkt, dest, dport, sport, len);
+		NetSetIP(pkt, dest, dport, sport, len);
 		memcpy(pkt + IP_HDR_SIZE, (uchar *)NetTxPacket + (pkt - (uchar *)NetArpWaitTxPacket) + IP_HDR_SIZE, len);
 
 		/* size of the waiting packet */
@@ -708,20 +733,20 @@ NetSendUDPPacket(uchar *ether, IPaddr_t dest, int dport, int sport, int len)
 		NetArpWaitTry = 1;
 		NetArpWaitTimerStart = get_timer(0);
 		ArpRequest();
-		return 1;	/* waiting */
+		return 1; /* waiting */
 	}
 
 #ifdef ET_DEBUG
 	printf("sending UDP to %08lx/%02x:%02x:%02x:%02x:%02x:%02x\n",
-		dest, ether[0], ether[1], ether[2], ether[3], ether[4], ether[5]);
+				 dest, ether[0], ether[1], ether[2], ether[3], ether[4], ether[5]);
 #endif
 
 	pkt = (uchar *)NetTxPacket;
-	pkt += NetSetEther (pkt, ether, PROT_IP);
-	NetSetIP (pkt, dest, dport, sport, len);
-	(void) eth_send(NetTxPacket, (pkt - NetTxPacket) + IP_HDR_SIZE + len);
+	pkt += NetSetEther(pkt, ether, PROT_IP);
+	NetSetIP(pkt, dest, dport, sport, len);
+	(void)eth_send(NetTxPacket, (pkt - NetTxPacket) + IP_HDR_SIZE + len);
 
-	return 0;	/* transmitted */
+	return 0; /* transmitted */
 }
 
 #if (CONFIG_COMMANDS & CFG_CMD_PING)
@@ -753,24 +778,24 @@ int PingSend(void)
 	/*
 	 *	Construct an IP and ICMP header.  (need to set no fragment bit - XXX)
 	 */
-	ip->ip_hl_v  = 0x45;		/* IP_HDR_SIZE / 4 (not including UDP) */
-	ip->ip_tos   = 0;
-	ip->ip_len   = htons(IP_HDR_SIZE_NO_UDP + 8);
-	ip->ip_id    = htons(NetIPID++);
-	ip->ip_off   = htons(0x4000);	/* No fragmentation */
-	ip->ip_ttl   = 255;
-	ip->ip_p     = 0x01;		/* ICMP */
-	ip->ip_sum   = 0;
-	NetCopyIP((void*)&ip->ip_src, &NetOurIP); /* already in network byte order */
-	NetCopyIP((void*)&ip->ip_dst, &NetPingIP);	   /* - "" - */
-	ip->ip_sum   = ~NetCksum((uchar *)ip, IP_HDR_SIZE_NO_UDP / 2);
+	ip->ip_hl_v = 0x45; /* IP_HDR_SIZE / 4 (not including UDP) */
+	ip->ip_tos = 0;
+	ip->ip_len = htons(IP_HDR_SIZE_NO_UDP + 8);
+	ip->ip_id = htons(NetIPID++);
+	ip->ip_off = htons(0x4000); /* No fragmentation */
+	ip->ip_ttl = 255;
+	ip->ip_p = 0x01; /* ICMP */
+	ip->ip_sum = 0;
+	NetCopyIP((void *)&ip->ip_src, &NetOurIP);	/* already in network byte order */
+	NetCopyIP((void *)&ip->ip_dst, &NetPingIP); /* - "" - */
+	ip->ip_sum = ~NetCksum((uchar *)ip, IP_HDR_SIZE_NO_UDP / 2);
 
-	s = &ip->udp_src;		/* XXX ICMP starts here */
-	s[0] = htons(0x0800);		/* echo-request, code */
-	s[1] = 0;			/* checksum */
-	s[2] = 0; 			/* identifier */
-	s[3] = htons(PingSeqNo++);	/* sequence number */
-	s[1] = ~NetCksum((uchar *)s, 8/2);
+	s = &ip->udp_src;					 /* XXX ICMP starts here */
+	s[0] = htons(0x0800);			 /* echo-request, code */
+	s[1] = 0;									 /* checksum */
+	s[2] = 0;									 /* identifier */
+	s[3] = htons(PingSeqNo++); /* sequence number */
+	s[1] = ~NetCksum((uchar *)s, 8 / 2);
 
 	/* size of the waiting packet */
 	NetArpWaitTxPacketSize = (pkt - NetArpWaitTxPacket) + IP_HDR_SIZE_NO_UDP + 8;
@@ -779,18 +804,18 @@ int PingSend(void)
 	NetArpWaitTry = 1;
 	NetArpWaitTimerStart = get_timer(0);
 	ArpRequest();
-	return 1;	/* waiting */
+	return 1; /* waiting */
 }
 
 static void
-PingTimeout (void)
+PingTimeout(void)
 {
 	eth_halt();
-	NetState = NETLOOP_FAIL;	/* we did not get the reply */
+	NetState = NETLOOP_FAIL; /* we did not get the reply */
 }
 
 static void
-PingHandler (uchar * pkt, unsigned dest, unsigned src, unsigned len)
+PingHandler(uchar *pkt, unsigned dest, unsigned src, unsigned len)
 {
 	IPaddr_t tmp;
 	volatile IP_t *ip = (volatile IP_t *)pkt;
@@ -806,32 +831,32 @@ static void PingStart(void)
 {
 	bd_t *bd = gd->NetLoopHttpdbd;
 #if defined(CONFIG_NET_MULTI)
-	printf ("Using %s device\n", eth_get_name());
-#endif	/* CONFIG_NET_MULTI */
-	NetSetTimeout (10 * CFG_HZ, PingTimeout);
-	NetSetHandler (PingHandler);
+	printf("Using %s device\n", eth_get_name());
+#endif /* CONFIG_NET_MULTI */
+	NetSetTimeout(10 * CFG_HZ, PingTimeout);
+	NetSetHandler(PingHandler);
 
 	PingSend();
 }
-#endif	/* CFG_CMD_PING */
+#endif /* CFG_CMD_PING */
 
 #if (CONFIG_COMMANDS & CFG_CMD_CDP)
 
-#define CDP_DEVICE_ID_TLV		0x0001
-#define CDP_ADDRESS_TLV			0x0002
-#define CDP_PORT_ID_TLV			0x0003
-#define CDP_CAPABILITIES_TLV		0x0004
-#define CDP_VERSION_TLV			0x0005
-#define CDP_PLATFORM_TLV		0x0006
-#define CDP_NATIVE_VLAN_TLV		0x000a
-#define CDP_APPLIANCE_VLAN_TLV		0x000e
-#define CDP_TRIGGER_TLV			0x000f
-#define CDP_POWER_CONSUMPTION_TLV	0x0010
-#define CDP_SYSNAME_TLV			0x0014
-#define CDP_SYSOBJECT_TLV		0x0015
-#define CDP_MANAGEMENT_ADDRESS_TLV	0x0016
+#define CDP_DEVICE_ID_TLV 0x0001
+#define CDP_ADDRESS_TLV 0x0002
+#define CDP_PORT_ID_TLV 0x0003
+#define CDP_CAPABILITIES_TLV 0x0004
+#define CDP_VERSION_TLV 0x0005
+#define CDP_PLATFORM_TLV 0x0006
+#define CDP_NATIVE_VLAN_TLV 0x000a
+#define CDP_APPLIANCE_VLAN_TLV 0x000e
+#define CDP_TRIGGER_TLV 0x000f
+#define CDP_POWER_CONSUMPTION_TLV 0x0010
+#define CDP_SYSNAME_TLV 0x0014
+#define CDP_SYSOBJECT_TLV 0x0015
+#define CDP_MANAGEMENT_ADDRESS_TLV 0x0016
 
-#define CDP_TIMEOUT			(CFG_HZ/4)	/* one packet every 250ms */
+#define CDP_TIMEOUT (CFG_HZ / 4) /* one packet every 250ms */
 
 static int CDPSeq;
 static int CDPOK;
@@ -839,29 +864,33 @@ static int CDPOK;
 ushort CDPNativeVLAN;
 ushort CDPApplianceVLAN;
 
-static const uchar CDP_SNAP_hdr[8] = { 0xAA, 0xAA, 0x03, 0x00, 0x00, 0x0C, 0x20, 0x00 };
+static const uchar CDP_SNAP_hdr[8] = {0xAA, 0xAA, 0x03, 0x00, 0x00, 0x0C, 0x20, 0x00};
 
 static ushort CDP_compute_csum(const uchar *buff, ushort len)
 {
 	ushort csum;
-	int     odd;
-	ulong   result = 0;
-	ushort  leftover;
+	int odd;
+	ulong result = 0;
+	ushort leftover;
 
-	if (len > 0) {
+	if (len > 0)
+	{
 		odd = 1 & (ulong)buff;
-		if (odd) {
+		if (odd)
+		{
 			result = *buff << 8;
 			len--;
 			buff++;
 		}
-		while (len > 1) {
+		while (len > 1)
+		{
 			result += *((const ushort *)buff)++;
 			if (result & 0x80000000)
 				result = (result & 0xFFFF) + (result >> 16);
 			len -= 2;
 		}
-		if (len) {
+		if (len)
+		{
 			leftover = (signed short)(*(const signed char *)buff);
 			/* * XXX CISCO SUCKS big time! (and blows too) */
 			result = (result & 0xffff0000) | ((result + leftover) & 0x0000ffff);
@@ -884,7 +913,7 @@ static ushort CDP_compute_csum(const uchar *buff, ushort len)
 	csum = ~(ushort)result;
 
 	/* run time endian detection */
-	if (csum != htons(csum))	/* little endian */
+	if (csum != htons(csum)) /* little endian */
 		csum = htons(csum);
 
 	return csum;
@@ -898,8 +927,8 @@ int CDPSendTrigger(void)
 	Ethernet_t *et;
 	int len;
 	ushort chksum;
-#if defined(CONFIG_CDP_DEVICE_ID) || defined(CONFIG_CDP_PORT_ID)   || \
-    defined(CONFIG_CDP_VERSION)   || defined(CONFIG_CDP_PLATFORM)
+#if defined(CONFIG_CDP_DEVICE_ID) || defined(CONFIG_CDP_PORT_ID) || \
+		defined(CONFIG_CDP_VERSION) || defined(CONFIG_CDP_PLATFORM)
 	char buf[32];
 #endif
 
@@ -919,11 +948,11 @@ int CDPSendTrigger(void)
 	pkt += sizeof(CDP_SNAP_hdr);
 
 	/* CDP header */
-	*pkt++ = 0x02;				/* CDP version 2 */
-	*pkt++ = 180;				/* TTL */
+	*pkt++ = 0x02; /* CDP version 2 */
+	*pkt++ = 180;	 /* TTL */
 	s = (volatile ushort *)pkt;
 	cp = s;
-	*s++ = htons(0);			/* checksum (0 for later calculation) */
+	*s++ = htons(0); /* checksum (0 for later calculation) */
 
 	/* CDP fields */
 #ifdef CONFIG_CDP_DEVICE_ID
@@ -931,9 +960,9 @@ int CDPSendTrigger(void)
 	*s++ = htons(CONFIG_CDP_DEVICE_ID);
 	memset(buf, 0, sizeof(buf));
 	sprintf(buf, CONFIG_CDP_DEVICE_ID_PREFIX "%02X%02X%02X%02X%02X%02X",
-		NetOurEther[0] & 0xff, NetOurEther[1] & 0xff,
-		NetOurEther[2] & 0xff, NetOurEther[3] & 0xff,
-		NetOurEther[4] & 0xff, NetOurEther[5] & 0xff);
+					NetOurEther[0] & 0xff, NetOurEther[1] & 0xff,
+					NetOurEther[2] & 0xff, NetOurEther[3] & 0xff,
+					NetOurEther[4] & 0xff, NetOurEther[5] & 0xff);
 	memcpy((uchar *)s, buf, 16);
 	s += 16 / 2;
 #endif
@@ -943,7 +972,7 @@ int CDPSendTrigger(void)
 	memset(buf, 0, sizeof(buf));
 	sprintf(buf, CONFIG_CDP_PORT_ID, eth_get_dev_index());
 	len = strlen(buf);
-	if (len & 1)	/* make it even */
+	if (len & 1) /* make it even */
 		len++;
 	*s++ = htons(len + 4);
 	memcpy((uchar *)s, buf, len);
@@ -962,7 +991,7 @@ int CDPSendTrigger(void)
 	memset(buf, 0, sizeof(buf));
 	strcpy(buf, CONFIG_CDP_VERSION);
 	len = strlen(buf);
-	if (len & 1)	/* make it even */
+	if (len & 1) /* make it even */
 		len++;
 	*s++ = htons(len + 4);
 	memcpy((uchar *)s, buf, len);
@@ -974,7 +1003,7 @@ int CDPSendTrigger(void)
 	memset(buf, 0, sizeof(buf));
 	strcpy(buf, CONFIG_CDP_PLATFORM);
 	len = strlen(buf);
-	if (len & 1)	/* make it even */
+	if (len & 1) /* make it even */
 		len++;
 	*s++ = htons(len + 4);
 	memcpy((uchar *)s, buf, len);
@@ -1004,17 +1033,18 @@ int CDPSendTrigger(void)
 		chksum = 0xFFFF;
 	*cp = htons(chksum);
 
-	(void) eth_send(NetTxPacket, (uchar *)s - NetTxPacket);
+	(void)eth_send(NetTxPacket, (uchar *)s - NetTxPacket);
 	return 0;
 }
 
 static void
-CDPTimeout (void)
+CDPTimeout(void)
 {
 	CDPSeq++;
 
-	if (CDPSeq < 3) {
-		NetSetTimeout (CDP_TIMEOUT, CDPTimeout);
+	if (CDPSeq < 3)
+	{
+		NetSetTimeout(CDP_TIMEOUT, CDPTimeout);
 		CDPSendTrigger();
 		return;
 	}
@@ -1027,13 +1057,13 @@ CDPTimeout (void)
 }
 
 static void
-CDPDummyHandler (uchar * pkt, unsigned dest, unsigned src, unsigned len)
+CDPDummyHandler(uchar *pkt, unsigned dest, unsigned src, unsigned len)
 {
 	/* nothing */
 }
 
 static void
-CDPHandler(const uchar * pkt, unsigned len)
+CDPHandler(const uchar *pkt, unsigned len)
 {
 	const uchar *t;
 	const ushort *ss;
@@ -1059,7 +1089,7 @@ CDPHandler(const uchar * pkt, unsigned len)
 	/* if version is greater than 0x02 maybe we'll have a problem; output a warning */
 	if (pkt[0] != 0x02)
 		printf("** WARNING: CDP packet received with a protocol version %d > 2\n",
-				pkt[0] & 0xff);
+					 pkt[0] & 0xff);
 
 	if (CDP_compute_csum(pkt, len) != 0)
 		return;
@@ -1069,67 +1099,72 @@ CDPHandler(const uchar * pkt, unsigned len)
 
 	vlan = htons(-1);
 	nvlan = htons(-1);
-	while (len > 0) {
+	while (len > 0)
+	{
 		if (len < 4)
 			goto pkt_short;
 
 		ss = (const ushort *)pkt;
 		type = ntohs(ss[0]);
 		tlen = ntohs(ss[1]);
-		if (tlen > len) {
+		if (tlen > len)
+		{
 			goto pkt_short;
 		}
 
 		pkt += tlen;
 		len -= tlen;
 
-		ss += 2;	/* point ss to the data of the TLV */
+		ss += 2; /* point ss to the data of the TLV */
 		tlen -= 4;
 
-		switch (type) {
-			case CDP_DEVICE_ID_TLV:
-				break;
-			case CDP_ADDRESS_TLV:
-				break;
-			case CDP_PORT_ID_TLV:
-				break;
-			case CDP_CAPABILITIES_TLV:
-				break;
-			case CDP_VERSION_TLV:
-				break;
-			case CDP_PLATFORM_TLV:
-				break;
-			case CDP_NATIVE_VLAN_TLV:
-				nvlan = *ss;
-				break;
-			case CDP_APPLIANCE_VLAN_TLV:
-				t = (const uchar *)ss;
-				while (tlen > 0) {
-					if (tlen < 3)
-						goto pkt_short;
+		switch (type)
+		{
+		case CDP_DEVICE_ID_TLV:
+			break;
+		case CDP_ADDRESS_TLV:
+			break;
+		case CDP_PORT_ID_TLV:
+			break;
+		case CDP_CAPABILITIES_TLV:
+			break;
+		case CDP_VERSION_TLV:
+			break;
+		case CDP_PLATFORM_TLV:
+			break;
+		case CDP_NATIVE_VLAN_TLV:
+			nvlan = *ss;
+			break;
+		case CDP_APPLIANCE_VLAN_TLV:
+			t = (const uchar *)ss;
+			while (tlen > 0)
+			{
+				if (tlen < 3)
+					goto pkt_short;
 
-					applid = t[0];
-					ss = (const ushort *)(t + 1);
+				applid = t[0];
+				ss = (const ushort *)(t + 1);
 
 #ifdef CONFIG_CDP_APPLIANCE_VLAN_TYPE
-					if (applid == CONFIG_CDP_APPLIANCE_VLAN_TYPE)
-						vlan = *ss;
+				if (applid == CONFIG_CDP_APPLIANCE_VLAN_TYPE)
+					vlan = *ss;
 #else
-					vlan = ntohs(*ss);	/* XXX will this work; dunno */
+				vlan = ntohs(*ss); /* XXX will this work; dunno */
 #endif
-					t += 3; tlen -= 3;
-				}
-				break;
-			case CDP_TRIGGER_TLV:
-				break;
-			case CDP_POWER_CONSUMPTION_TLV:
-				break;
-			case CDP_SYSNAME_TLV:
-				break;
-			case CDP_SYSOBJECT_TLV:
-				break;
-			case CDP_MANAGEMENT_ADDRESS_TLV:
-				break;
+				t += 3;
+				tlen -= 3;
+			}
+			break;
+		case CDP_TRIGGER_TLV:
+			break;
+		case CDP_POWER_CONSUMPTION_TLV:
+			break;
+		case CDP_SYSNAME_TLV:
+			break;
+		case CDP_SYSOBJECT_TLV:
+			break;
+		case CDP_MANAGEMENT_ADDRESS_TLV:
+			break;
 		}
 	}
 
@@ -1139,7 +1174,7 @@ CDPHandler(const uchar * pkt, unsigned len)
 	CDPOK = 1;
 	return;
 
- pkt_short:
+pkt_short:
 	printf("** CDP packet is too short\n");
 	return;
 }
@@ -1147,7 +1182,7 @@ CDPHandler(const uchar * pkt, unsigned len)
 static void CDPStart(void)
 {
 #if defined(CONFIG_NET_MULTI)
-	printf ("Using %s device\n", eth_get_name());
+	printf("Using %s device\n", eth_get_name());
 #endif
 	CDPSeq = 0;
 	CDPOK = 0;
@@ -1155,22 +1190,20 @@ static void CDPStart(void)
 	CDPNativeVLAN = htons(-1);
 	CDPApplianceVLAN = htons(-1);
 
-	NetSetTimeout (CDP_TIMEOUT, CDPTimeout);
-	NetSetHandler (CDPDummyHandler);
+	NetSetTimeout(CDP_TIMEOUT, CDPTimeout);
+	NetSetHandler(CDPDummyHandler);
 
 	CDPSendTrigger();
 }
-#endif	/* CFG_CMD_CDP */
+#endif /* CFG_CMD_CDP */
 
-
-void
-NetReceive(volatile uchar * inpkt, int len)
+void NetReceive(volatile uchar *inpkt, int len)
 {
 	Ethernet_t *et;
-	IP_t	*ip;
-	ARP_t	*arp;
+	IP_t *ip;
+	ARP_t *arp;
 	IPaddr_t tmp;
-	int	x;
+	int x;
 	uchar *pkt;
 #if (CONFIG_COMMANDS & CFG_CMD_CDP)
 	int iscdp;
@@ -1184,7 +1217,8 @@ NetReceive(volatile uchar * inpkt, int len)
 	printf("packet received\n");
 #endif
 
-	if(webfailsafe_is_running){
+	if (webfailsafe_is_running)
+	{
 		NetReceiveHttpd(inpkt, len);
 		return;
 	}
@@ -1196,9 +1230,9 @@ NetReceive(volatile uchar * inpkt, int len)
 	/* too small packet? */
 	if (len < ETHER_HDR_SIZE)
 	{
-		printf("\n en[%d] < ETHER_HDR_SIZE\n",len);
+		printf("\n en[%d] < ETHER_HDR_SIZE\n", len);
 		return;
-	}	
+	}
 
 #if (CONFIG_COMMANDS & CFG_CMD_CDP)
 	/* keep track if packet is CDP */
@@ -1220,7 +1254,8 @@ NetReceive(volatile uchar * inpkt, int len)
 	printf("packet received\n");
 #endif
 
-	if (x < 1514) {
+	if (x < 1514)
+	{
 		/*
 		 *	Got a 802 packet.  Check the other protocol field.
 		 */
@@ -1228,12 +1263,14 @@ NetReceive(volatile uchar * inpkt, int len)
 
 		ip = (IP_t *)(inpkt + E802_HDR_SIZE);
 		len -= E802_HDR_SIZE;
-
-	} else if (x != PROT_VLAN) {	/* normal packet */
+	}
+	else if (x != PROT_VLAN)
+	{ /* normal packet */
 		ip = (IP_t *)(inpkt + ETHER_HDR_SIZE);
 		len -= ETHER_HDR_SIZE;
-
-	} else {			/* VLAN packet */
+	}
+	else
+	{ /* VLAN packet */
 #ifdef CONFIG_NET_VLAN
 		VLAN_Ethernet_t *vet = (VLAN_Ethernet_t *)et;
 
@@ -1249,7 +1286,7 @@ NetReceive(volatile uchar * inpkt, int len)
 #if (CONFIG_COMMANDS & CFG_CMD_CDP)
 				&& iscdp == 0
 #endif
-				)
+		)
 			return;
 
 		cti = ntohs(vet->vet_tag);
@@ -1268,14 +1305,16 @@ NetReceive(volatile uchar * inpkt, int len)
 #endif
 
 #if (CONFIG_COMMANDS & CFG_CMD_CDP)
-	if (iscdp) {
+	if (iscdp)
+	{
 		CDPHandler((uchar *)ip, len);
 		return;
 	}
 #endif
 
 #ifdef CONFIG_NET_VLAN
-	if ((myvlanid & VLAN_IDMASK) != VLAN_NONE) {
+	if ((myvlanid & VLAN_IDMASK) != VLAN_NONE)
+	{
 		if (vlanid == VLAN_NONE)
 			vlanid = (mynvlanid & VLAN_IDMASK);
 		/* not matched? */
@@ -1284,7 +1323,8 @@ NetReceive(volatile uchar * inpkt, int len)
 	}
 #endif
 
-	switch (x) {
+	switch (x)
+	{
 
 	case PROT_ARP:
 		/*
@@ -1297,74 +1337,83 @@ NetReceive(volatile uchar * inpkt, int len)
 		 *   the server ethernet address
 		 */
 #ifdef ET_DEBUG
-		puts ("Got ARP\n");
+		puts("Got ARP\n");
 #endif
 		arp = (ARP_t *)ip;
-		if (len < ARP_HDR_SIZE) {
+		if (len < ARP_HDR_SIZE)
+		{
 			printf("bad length %d < %d\n", len, ARP_HDR_SIZE);
 			return;
 		}
-		if (ntohs(arp->ar_hrd) != ARP_ETHER) {
+		if (ntohs(arp->ar_hrd) != ARP_ETHER)
+		{
 			printf("\n ntohs(arp->ar_hrd) != ARP_ETHER\n");
 			return;
 		}
-		if (ntohs(arp->ar_pro) != PROT_IP) {
+		if (ntohs(arp->ar_pro) != PROT_IP)
+		{
 			printf("\n ntohs(arp->ar_pro) != PROT_IP\n");
 			return;
 		}
-		if (arp->ar_hln != 6) {
+		if (arp->ar_hln != 6)
+		{
 			printf("\n arp->ar_hln != 6 \n");
 			return;
 		}
-		if (arp->ar_pln != 4) {
+		if (arp->ar_pln != 4)
+		{
 			printf("\n arp->ar_pln != 4 \n");
 			return;
 		}
 
-		if (NetOurIP == 0) {
+		if (NetOurIP == 0)
+		{
 			printf("\n NetOurIP \n");
 			return;
 		}
 
-		if (NetReadIP(&arp->ar_data[16]) != NetOurIP) {
-			//printf("\n (NetReadIP(&arp->ar_data[16]) != NetOurIP)  \n");
+		if (NetReadIP(&arp->ar_data[16]) != NetOurIP)
+		{
+			// printf("\n (NetReadIP(&arp->ar_data[16]) != NetOurIP)  \n");
 			return;
 		}
 
-		switch (ntohs(arp->ar_op)) {
-		case ARPOP_REQUEST:		/* reply with our IP address	*/
-			puts ("Got ARP REQUEST, return our IP\n");
+		switch (ntohs(arp->ar_op))
+		{
+		case ARPOP_REQUEST: /* reply with our IP address	*/
+			puts("Got ARP REQUEST, return our IP\n");
 			pkt = (uchar *)et;
 			pkt += NetSetEther(pkt, et->et_src, PROT_ARP);
 			arp->ar_op = htons(ARPOP_REPLY);
-			memcpy   (&arp->ar_data[10], &arp->ar_data[0], 6);
+			memcpy(&arp->ar_data[10], &arp->ar_data[0], 6);
 			NetCopyIP(&arp->ar_data[16], &arp->ar_data[6]);
-			memcpy   (&arp->ar_data[ 0], NetOurEther, 6);
-			NetCopyIP(&arp->ar_data[ 6], &NetOurIP);
-			(void) eth_send((uchar *)et, (pkt - (uchar *)et) + ARP_HDR_SIZE);
+			memcpy(&arp->ar_data[0], NetOurEther, 6);
+			NetCopyIP(&arp->ar_data[6], &NetOurIP);
+			(void)eth_send((uchar *)et, (pkt - (uchar *)et) + ARP_HDR_SIZE);
 			return;
 
-		case ARPOP_REPLY:		/* arp reply */
+		case ARPOP_REPLY: /* arp reply */
 			/* are we waiting for a reply */
 			if (!NetArpWaitPacketIP || !NetArpWaitPacketMAC)
 				break;
-			
+
 			printf("Got ARP REPLY, set server/gtwy eth addr (%02x:%02x:%02x:%02x:%02x:%02x)\n",
-				arp->ar_data[0], arp->ar_data[1],
-				arp->ar_data[2], arp->ar_data[3],
-				arp->ar_data[4], arp->ar_data[5]);
+						 arp->ar_data[0], arp->ar_data[1],
+						 arp->ar_data[2], arp->ar_data[3],
+						 arp->ar_data[4], arp->ar_data[5]);
 
 			tmp = NetReadIP(&arp->ar_data[6]);
 
 			/* matched waiting packet's address */
-			if (tmp == NetArpWaitReplyIP) {
-				puts ("Got it\n");
+			if (tmp == NetArpWaitReplyIP)
+			{
+				puts("Got it\n");
 
 				/* save address for later use */
 				memcpy(NetArpWaitPacketMAC, &arp->ar_data[0], 6);
 
 #ifdef CONFIG_NETCONSOLE
-				(*packetHandler)(0,0,0,0);
+				(*packetHandler)(0, 0, 0, 0);
 #endif
 
 				/* no arp request pending now */
@@ -1373,11 +1422,12 @@ NetReceive(volatile uchar * inpkt, int len)
 				NetArpWaitPacketMAC = NULL;
 
 				/* if Arp response requested by TFTP,
-				 * send "TFTP Read Request" packet 
+				 * send "TFTP Read Request" packet
 				 * immediately */
 				extern int TftpStarted;
-				if(TftpStarted == 1) {
-				    TftpSend ();
+				if (TftpStarted == 1)
+				{
+					TftpSend();
 				}
 			}
 			return;
@@ -1391,39 +1441,45 @@ NetReceive(volatile uchar * inpkt, int len)
 
 	case PROT_RARP:
 #ifdef ET_DEBUG
-		puts ("Got RARP\n");
+		puts("Got RARP\n");
 #endif
 		arp = (ARP_t *)ip;
-		if (len < ARP_HDR_SIZE) {
+		if (len < ARP_HDR_SIZE)
+		{
 			printf("bad length %d < %d\n", len, ARP_HDR_SIZE);
 			return;
 		}
 
 		if ((ntohs(arp->ar_op) != RARPOP_REPLY) ||
-			(ntohs(arp->ar_hrd) != ARP_ETHER)   ||
-			(ntohs(arp->ar_pro) != PROT_IP)     ||
-			(arp->ar_hln != 6) || (arp->ar_pln != 4)) {
+				(ntohs(arp->ar_hrd) != ARP_ETHER) ||
+				(ntohs(arp->ar_pro) != PROT_IP) ||
+				(arp->ar_hln != 6) || (arp->ar_pln != 4))
+		{
 
-			puts ("invalid RARP header\n");
-		} else {
-			NetCopyIP(&NetOurIP,    &arp->ar_data[16]);
+			puts("invalid RARP header\n");
+		}
+		else
+		{
+			NetCopyIP(&NetOurIP, &arp->ar_data[16]);
 			if (NetServerIP == 0)
-				NetCopyIP(&NetServerIP, &arp->ar_data[ 6]);
-			memcpy (NetServerEther, &arp->ar_data[ 0], 6);
+				NetCopyIP(&NetServerIP, &arp->ar_data[6]);
+			memcpy(NetServerEther, &arp->ar_data[0], 6);
 
-			(*packetHandler)(0,0,0,0);
+			(*packetHandler)(0, 0, 0, 0);
 		}
 		break;
 
 	case PROT_IP:
 #ifdef ET_DEBUG
-		puts ("Got IP\n");
+		puts("Got IP\n");
 #endif
-		if (len < IP_HDR_SIZE) {
-			debug ("len bad %d < %d\n", len, IP_HDR_SIZE);
+		if (len < IP_HDR_SIZE)
+		{
+			debug("len bad %d < %d\n", len, IP_HDR_SIZE);
 			return;
 		}
-		if (len < ntohs(ip->ip_len)) {
+		if (len < ntohs(ip->ip_len))
+		{
 			printf("len bad %d < %d\n", len, ntohs(ip->ip_len));
 			return;
 		}
@@ -1431,18 +1487,22 @@ NetReceive(volatile uchar * inpkt, int len)
 #ifdef ET_DEBUG
 		printf("len=%d, v=%02x\n", len, ip->ip_hl_v & 0xff);
 #endif
-		if ((ip->ip_hl_v & 0xf0) != 0x40) {
+		if ((ip->ip_hl_v & 0xf0) != 0x40)
+		{
 			return;
 		}
-		if (ip->ip_off & htons(0x1fff)) { /* Can't deal w/ fragments */
+		if (ip->ip_off & htons(0x1fff))
+		{ /* Can't deal w/ fragments */
 			return;
 		}
-		if (!NetCksumOk((uchar *)ip, IP_HDR_SIZE_NO_UDP / 2)) {
-			puts ("checksum bad\n");
+		if (!NetCksumOk((uchar *)ip, IP_HDR_SIZE_NO_UDP / 2))
+		{
+			puts("checksum bad\n");
 			return;
 		}
 		tmp = NetReadIP(&ip->ip_dst);
-		if (NetOurIP && tmp != NetOurIP && tmp != 0xFFFFFFFF) {
+		if (NetOurIP && tmp != NetOurIP && tmp != 0xFFFFFFFF)
+		{
 			return;
 		}
 #if (CONFIG_COMMANDS & CFG_CMD_PING)
@@ -1463,16 +1523,18 @@ NetReceive(volatile uchar * inpkt, int len)
 		 * configuration might be wrong. But I'm not really
 		 * sure if there aren't any other situations.
 		 */
-		if (ip->ip_p == IPPROTO_ICMP) {
+		if (ip->ip_p == IPPROTO_ICMP)
+		{
 			ICMP_t *icmph = (ICMP_t *)&(ip->udp_src);
 
-			switch (icmph->type) {
+			switch (icmph->type)
+			{
 			case ICMP_REDIRECT:
-			if (icmph->code != ICMP_REDIR_HOST)
-				return;
-			puts (" ICMP Host Redirect to ");
-			print_IPaddr(icmph->un.gateway);
-			putc(' ');
+				if (icmph->code != ICMP_REDIR_HOST)
+					return;
+				puts(" ICMP Host Redirect to ");
+				print_IPaddr(icmph->un.gateway);
+				putc(' ');
 				break;
 #if (CONFIG_COMMANDS & CFG_CMD_PING)
 			case ICMP_ECHO_REPLY:
@@ -1486,40 +1548,43 @@ NetReceive(volatile uchar * inpkt, int len)
 			default:
 				return;
 			}
-		} else if (ip->ip_p != IPPROTO_UDP) {	/* Only UDP packets */
+		}
+		else if (ip->ip_p != IPPROTO_UDP)
+		{ /* Only UDP packets */
 			return;
 		}
 #endif
 
 #ifdef CONFIG_NETCONSOLE
-		nc_input_packet((uchar *)ip +IP_HDR_SIZE,
-						ntohs(ip->udp_dst),
-						ntohs(ip->udp_src),
-						ntohs(ip->udp_len) - 8);
+		nc_input_packet((uchar *)ip + IP_HDR_SIZE,
+										ntohs(ip->udp_dst),
+										ntohs(ip->udp_src),
+										ntohs(ip->udp_len) - 8);
 #endif
 
 		/*
 		 *	IP header OK.  Pass the packet to the current handler.
 		 */
-		(*packetHandler)((uchar *)ip +IP_HDR_SIZE,
-						ntohs(ip->udp_dst),
-						ntohs(ip->udp_src),
-						ntohs(ip->udp_len) - 8);
+		(*packetHandler)((uchar *)ip + IP_HDR_SIZE,
+										 ntohs(ip->udp_dst),
+										 ntohs(ip->udp_src),
+										 ntohs(ip->udp_len) - 8);
 		break;
 	}
 }
 
-
 /**********************************************************************/
 
-static int net_check_prereq (proto_t protocol)
+static int net_check_prereq(proto_t protocol)
 {
-	switch (protocol) {
+	switch (protocol)
+	{
 		/* Fall through */
 #if (CONFIG_COMMANDS & CFG_CMD_PING)
 	case PING:
-		if (NetPingIP == 0) {
-			puts ("*** ERROR: ping address not given\n");
+		if (NetPingIP == 0)
+		{
+			puts("*** ERROR: ping address not given\n");
 			return (1);
 		}
 		goto common;
@@ -1529,16 +1594,18 @@ static int net_check_prereq (proto_t protocol)
 #endif
 	case NETCONS:
 	case TFTP:
-		if (NetServerIP == 0) {
-			puts ("*** ERROR: `serverip' not set\n");
+		if (NetServerIP == 0)
+		{
+			puts("*** ERROR: `serverip' not set\n");
 			return (1);
 		}
 #if (CONFIG_COMMANDS & CFG_CMD_PING)
-	      common:
+	common:
 #endif
 
-		if (NetOurIP == 0) {
-			puts ("*** ERROR: `ipaddr' not set\n");
+		if (NetOurIP == 0)
+		{
+			puts("*** ERROR: `ipaddr' not set\n");
 			return (1);
 		}
 		/* Fall through */
@@ -1547,28 +1614,30 @@ static int net_check_prereq (proto_t protocol)
 	case RARP:
 	case BOOTP:
 	case CDP:
-		if (memcmp (NetOurEther, "\0\0\0\0\0\0", 6) == 0) {
+		if (memcmp(NetOurEther, "\0\0\0\0\0\0", 6) == 0)
+		{
 #ifdef CONFIG_NET_MULTI
-			extern int eth_get_dev_index (void);
-			int num = eth_get_dev_index ();
+			extern int eth_get_dev_index(void);
+			int num = eth_get_dev_index();
 
-			switch (num) {
+			switch (num)
+			{
 			case -1:
-				puts ("*** ERROR: No ethernet found.\n");
+				puts("*** ERROR: No ethernet found.\n");
 				return (1);
 			case 0:
-				puts ("*** ERROR: `ethaddr' not set\n");
+				puts("*** ERROR: `ethaddr' not set\n");
 				break;
 			default:
-				printf ("*** ERROR: `eth%daddr' not set\n",
-					num);
+				printf("*** ERROR: `eth%daddr' not set\n",
+							 num);
 				break;
 			}
 
-			NetStartAgain ();
+			NetStartAgain();
 			return (2);
 #else
-			puts ("*** ERROR: `ethaddr' not set\n");
+			puts("*** ERROR: `ethaddr' not set\n");
 			return (1);
 #endif
 		}
@@ -1576,21 +1645,19 @@ static int net_check_prereq (proto_t protocol)
 	default:
 		return (0);
 	}
-	return (0);		/* OK */
+	return (0); /* OK */
 }
 /**********************************************************************/
 
-int
-NetCksumOk(uchar * ptr, int len)
+int NetCksumOk(uchar *ptr, int len)
 {
 	return !((NetCksum(ptr, len) + 1) & 0xfffe);
 }
 
-
 unsigned
-NetCksum(uchar * ptr, int len)
+NetCksum(uchar *ptr, int len)
 {
-	ulong	xsum;
+	ulong xsum;
 	ushort *p = (ushort *)ptr;
 
 	xsum = 0;
@@ -1601,8 +1668,7 @@ NetCksum(uchar * ptr, int len)
 	return (xsum & 0xffff);
 }
 
-int
-NetEthHdrSize(void)
+int NetEthHdrSize(void)
 {
 	ushort myvlanid;
 
@@ -1617,8 +1683,7 @@ NetEthHdrSize(void)
 #endif
 }
 
-int
-NetSetEther(volatile uchar * xet, uchar * addr, uint prot)
+int NetSetEther(volatile uchar *xet, uchar *addr, uint prot)
 {
 	Ethernet_t *et = (Ethernet_t *)xet;
 	ushort myvlanid;
@@ -1629,13 +1694,16 @@ NetSetEther(volatile uchar * xet, uchar * addr, uint prot)
 		myvlanid = VLAN_NONE;
 #endif
 
-	memcpy (et->et_dest, addr, 6);
-	memcpy (et->et_src, NetOurEther, 6);
+	memcpy(et->et_dest, addr, 6);
+	memcpy(et->et_src, NetOurEther, 6);
 #ifdef CONFIG_NET_VLAN
-	if ((myvlanid & VLAN_IDMASK) == VLAN_NONE) {
-	et->et_protlen = htons(prot);
+	if ((myvlanid & VLAN_IDMASK) == VLAN_NONE)
+	{
+		et->et_protlen = htons(prot);
 		return ETHER_HDR_SIZE;
-	} else {
+	}
+	else
+	{
 		VLAN_Ethernet_t *vet = (VLAN_Ethernet_t *)xet;
 
 		vet->vet_vlan_type = htons(PROT_VLAN);
@@ -1647,11 +1715,9 @@ NetSetEther(volatile uchar * xet, uchar * addr, uint prot)
 	et->et_protlen = htons(prot);
 	return ETHER_HDR_SIZE;
 #endif // CONFIG_NET_VLAN //
-
 }
 
-void
-NetSetIP(volatile uchar * xip, IPaddr_t dest, int dport, int sport, int len)
+void NetSetIP(volatile uchar *xip, IPaddr_t dest, int dport, int sport, int len)
 {
 	volatile IP_t *ip = (IP_t *)xip;
 
@@ -1667,31 +1733,33 @@ NetSetIP(volatile uchar * xip, IPaddr_t dest, int dport, int sport, int len)
 	 *	Construct an IP and UDP header.
 	 *	(need to set no fragment bit - XXX)
 	 */
-	ip->ip_hl_v  = 0x45;		/* IP_HDR_SIZE / 4 (not including UDP) */
-	ip->ip_tos   = 0;
-	ip->ip_len   = htons(IP_HDR_SIZE + len);
-	ip->ip_id    = htons(NetIPID++);
-	ip->ip_off   = htons(0x4000);	/* No fragmentation */
-	ip->ip_ttl   = 255;
-	ip->ip_p     = 17;		/* UDP */
-	ip->ip_sum   = 0;
-	NetCopyIP((void*)&ip->ip_src, &NetOurIP); /* already in network byte order */
-	NetCopyIP((void*)&ip->ip_dst, &dest);	   /* - "" - */
-	ip->udp_src  = htons(sport);
-	ip->udp_dst  = htons(dport);
-	ip->udp_len  = htons(8 + len);
+	ip->ip_hl_v = 0x45; /* IP_HDR_SIZE / 4 (not including UDP) */
+	ip->ip_tos = 0;
+	ip->ip_len = htons(IP_HDR_SIZE + len);
+	ip->ip_id = htons(NetIPID++);
+	ip->ip_off = htons(0x4000); /* No fragmentation */
+	ip->ip_ttl = 255;
+	ip->ip_p = 17; /* UDP */
+	ip->ip_sum = 0;
+	NetCopyIP((void *)&ip->ip_src, &NetOurIP); /* already in network byte order */
+	NetCopyIP((void *)&ip->ip_dst, &dest);		 /* - "" - */
+	ip->udp_src = htons(sport);
+	ip->udp_dst = htons(dport);
+	ip->udp_len = htons(8 + len);
 	ip->udp_xsum = 0;
-	ip->ip_sum   = ~NetCksum((uchar *)ip, IP_HDR_SIZE_NO_UDP / 2);
+	ip->ip_sum = ~NetCksum((uchar *)ip, IP_HDR_SIZE_NO_UDP / 2);
 }
 
-void copy_filename (uchar *dst, uchar *src, int size)
+void copy_filename(uchar *dst, uchar *src, int size)
 {
-	if (*src && (*src == '"')) {
+	if (*src && (*src == '"'))
+	{
 		++src;
 		--size;
 	}
 
-	while ((--size > 0) && *src && (*src != '"')) {
+	while ((--size > 0) && *src && (*src != '"'))
+	{
 		*dst++ = *src++;
 	}
 	*dst = '\0';
@@ -1699,14 +1767,13 @@ void copy_filename (uchar *dst, uchar *src, int size)
 
 #endif /* CFG_CMD_NET */
 
-void ip_to_string (IPaddr_t x, char *s)
+void ip_to_string(IPaddr_t x, char *s)
 {
-	x = ntohl (x);
-	sprintf (s, "%d.%d.%d.%d",
-		 (int) ((x >> 24) & 0xff),
-		 (int) ((x >> 16) & 0xff),
-		 (int) ((x >> 8) & 0xff), (int) ((x >> 0) & 0xff)
-	);
+	x = ntohl(x);
+	sprintf(s, "%d.%d.%d.%d",
+					(int)((x >> 24) & 0xff),
+					(int)((x >> 16) & 0xff),
+					(int)((x >> 8) & 0xff), (int)((x >> 0) & 0xff));
 }
 
 IPaddr_t string_to_ip(char *s)
@@ -1716,14 +1783,16 @@ IPaddr_t string_to_ip(char *s)
 	int i;
 
 	if (s == NULL)
-		return(0);
+		return (0);
 
-	for (addr=0, i=0; i<4; ++i) {
+	for (addr = 0, i = 0; i < 4; ++i)
+	{
 		ulong val = s ? simple_strtoul(s, &e, 10) : 0;
 		addr <<= 8;
 		addr |= (val & 0xFF);
-		if (s) {
-			s = (*e) ? e+1 : e;
+		if (s)
+		{
+			s = (*e) ? e + 1 : e;
 		}
 	}
 
@@ -1761,66 +1830,76 @@ ushort string_to_VLAN(char *s)
 
 #endif // CONFIG_NET_VLAN //
 
-void print_IPaddr (IPaddr_t x)
+void print_IPaddr(IPaddr_t x)
 {
 	char tmp[16];
 
-	ip_to_string (x, tmp);
+	ip_to_string(x, tmp);
 
-	puts (tmp);
+	puts(tmp);
 }
 
-IPaddr_t getenv_IPaddr (char *var)
+IPaddr_t getenv_IPaddr(char *var)
 {
 	return (string_to_ip(getenv(var)));
 }
 
-ushort getenv_VLAN(char *var){
-	return(string_to_VLAN(getenv(var)));
+ushort getenv_VLAN(char *var)
+{
+	return (string_to_VLAN(getenv(var)));
 }
 
-//!hettpd
+//! hettpd
 /**********************************************************************************
  * HTTPD section
  */
 
-#define BUF	((struct uip_eth_hdr *)&uip_buf[0])
+#define BUF ((struct uip_eth_hdr *)&uip_buf[0])
 
-void NetSendHttpd(void){
+void NetSendHttpd(void)
+{
 	volatile uchar *tmpbuf = NetTxPacket;
 	int i;
 
-	for(i = 0; i < 40 + UIP_LLH_LEN; i++){
+	for (i = 0; i < 40 + UIP_LLH_LEN; i++)
+	{
 		tmpbuf[i] = uip_buf[i];
 	}
 
-	for(; i < uip_len; i++){
+	for (; i < uip_len; i++)
+	{
 		tmpbuf[i] = uip_appdata[i - 40 - UIP_LLH_LEN];
 	}
 
-	eth_send(NetTxPacket, uip_len);//网络数据传输函数 dev->send   = rt2880_eth_send 在rt2880_eth.c文件中定义
+	eth_send(NetTxPacket, uip_len); // 网络数据传输函数 dev->send   = rt2880_eth_send 在rt2880_eth.c文件中定义
 }
 
-void NetReceiveHttpd(volatile uchar * inpkt, int len){
+void NetReceiveHttpd(volatile uchar *inpkt, int len)
+{
 	memcpy(uip_buf, (const void *)inpkt, len);
 	uip_len = len;
 
-	//printf("NetReceiveHttpd buf->type = %04X\n", ntohs(BUF->type));
-   
-	if(BUF->type == htons(UIP_ETHTYPE_IP)){
-		//printf("buf type is UIP_ETHTYPE_IP\n"); 
+	// printf("NetReceiveHttpd buf->type = %04X\n", ntohs(BUF->type));
+
+	if (BUF->type == htons(UIP_ETHTYPE_IP))
+	{
+		// printf("buf type is UIP_ETHTYPE_IP\n");
 		uip_arp_ipin();
 		uip_input();
 
-		if(uip_len > 0){
+		if (uip_len > 0)
+		{
 			uip_arp_out();
 			NetSendHttpd();
 		}
-	} else if(BUF->type == htons(UIP_ETHTYPE_ARP)){
-		//printf("buf type is UIP_ETHTYPE_ARP\n");   
+	}
+	else if (BUF->type == htons(UIP_ETHTYPE_ARP))
+	{
+		// printf("buf type is UIP_ETHTYPE_ARP\n");
 		uip_arp_arpin();
 
-		if(uip_len > 0){
+		if (uip_len > 0)
+		{
 			NetSendHttpd();
 		}
 	}
@@ -1831,42 +1910,45 @@ void NetReceiveHttpd(volatile uchar * inpkt, int len){
  * HTTP web server for web failsafe mode
  *
  ***************************************/
-int NetLoopHttpd(void){
+int NetLoopHttpd(void)
+{
 	bd_t *bd = gd->bd;
 	unsigned short int ip[2];
 	unsigned char ethinit_attempt = 0;
 	struct uip_eth_addr eaddr;
-    char httpd_ipaddr[22] = "192.168.1.1";
+	char httpd_ipaddr[22] = "192.168.2.1";
 #ifdef OLED_1_3
-    OLED_ShowString(0,4,httpd_ipaddr);
+	OLED_ShowString(0, 4, httpd_ipaddr);
 #endif
-    setenv("ipaddr",httpd_ipaddr);
+	setenv("ipaddr", httpd_ipaddr);
 #ifdef CONFIG_NET_MULTI
 	NetRestarted = 0;
 	NetDevExists = 0;
 #endif
 	IPaddr_t x = ntohl(bd->bi_ip_addr);
 	/* XXX problem with bss workaround */
-	NetArpWaitPacketMAC	= NULL;
-	NetArpWaitTxPacket	= NULL;
-	NetArpWaitPacketIP	= 0;
-	NetArpWaitReplyIP	= 0;
-	NetArpWaitTxPacket	= NULL;
-	NetTxPacket			= NULL;
+	NetArpWaitPacketMAC = NULL;
+	NetArpWaitTxPacket = NULL;
+	NetArpWaitPacketIP = 0;
+	NetArpWaitReplyIP = 0;
+	NetArpWaitTxPacket = NULL;
+	NetTxPacket = NULL;
 
-	if(!NetTxPacket){
-		int	i;
+	if (!NetTxPacket)
+	{
+		int i;
 		BUFFER_ELEM *buf;
 		/*
 		 *	Setup packet buffers, aligned correctly.
 		 */
-		buf = rt2880_free_buf_entry_dequeue(&rt2880_free_buf_list); 
+		buf = rt2880_free_buf_entry_dequeue(&rt2880_free_buf_list);
 		NetTxPacket = buf->pbuf;
 
-		for (i = 0; i < NUM_RX_DESC; i++) {
+		for (i = 0; i < NUM_RX_DESC; i++)
+		{
 
-			buf = rt2880_free_buf_entry_dequeue(&rt2880_free_buf_list); 
-			if(buf == NULL)
+			buf = rt2880_free_buf_entry_dequeue(&rt2880_free_buf_list);
+			if (buf == NULL)
 			{
 				printf("\n Packet Buffer is empty ! \n");
 
@@ -1875,15 +1957,16 @@ int NetLoopHttpd(void){
 			NetRxPackets[i] = buf->pbuf;
 		}
 	}
-	
+
 	NetTxPacket = KSEG1ADDR(NetTxPacket);
 
-	if(!NetArpWaitTxPacket){
+	if (!NetArpWaitTxPacket)
+	{
 		NetArpWaitTxPacket = &NetArpWaitPacketBuf[0] + (PKTALIGN - 1);
 		NetArpWaitTxPacket -= (ulong)NetArpWaitTxPacket % PKTALIGN;
 		NetArpWaitTxPacketSize = 0;
 	}
-					
+
 	eth_halt();
 
 	milisecdelay(50);
@@ -1891,11 +1974,11 @@ int NetLoopHttpd(void){
 	eth_set_current();
 #endif
 
-	//printf("\n NetLoop,call eth_init ! \n");
+	// printf("\n NetLoop,call eth_init ! \n");
 	if (eth_init(bd) < 0)
 	{
-	    printf("\n eth_init is fail !!\n");
-		return(-1);
+		printf("\n eth_init is fail !!\n");
+		return (-1);
 	}
 
 	// get MAC address
@@ -1918,50 +2001,52 @@ int NetLoopHttpd(void){
 	// set ip and other addresses
 	// TODO: do we need this with uIP stack?
 	NetCopyIP(&NetOurIP, &x);
-	NetOurGatewayIP		= getenv_IPaddr("gatewayip");
-	NetOurSubnetMask	= getenv_IPaddr("netmask");
-	NetOurVLAN			= getenv_VLAN("vlan");
-	NetOurNativeVLAN	= getenv_VLAN("nvlan");
+	NetOurGatewayIP = getenv_IPaddr("gatewayip");
+	NetOurSubnetMask = getenv_IPaddr("netmask");
+	NetOurVLAN = getenv_VLAN("vlan");
+	NetOurNativeVLAN = getenv_VLAN("nvlan");
 
-	
-	ip_to_string(bd->bi_ip_addr,httpd_ipaddr);  
-	printf("Httpd Server Ip: %s\n",httpd_ipaddr); 
+	ip_to_string(bd->bi_ip_addr, httpd_ipaddr);
+	printf("Httpd Server Ip: %s\n", httpd_ipaddr);
 	HttpdStart();
 
 	// set local host ip address
 	ip[0] = htons(((x & 0xFFFF0000) >> 16));
 	ip[1] = htons((x & 0x0000FFFF));
-	
+
 	uip_sethostaddr(ip);
 
 	// set network mask (255.255.0.0 -> local network)
 	ip[0] = htons(0xFFFF);
-	ip[1] = htons (0x0000);
+	ip[1] = htons(0x0000);
 
 	uip_setnetmask(ip);
-	
+
 	// should we also set default router ip address?
-	ip[0] = 0xFFFF;  
-	ip[1] = 0xFFFF;  
-	uip_setdraddr(ip);  
+	ip[0] = 0xFFFF;
+	ip[1] = 0xFFFF;
+	uip_setdraddr(ip);
 
 	// show current progress of the process
 	do_http_progress(WEBFAILSAFE_PROGRESS_START);
 
 	webfailsafe_is_running = 1;
 	// infinite loop
-	for(;;){
+	for (;;)
+	{
 
 		/*
 		 *	Check the ethernet for a new packet.
 		 *	The ethernet receive routine will process it.
 		 */
-		if(eth_rx() > 0){
+		if (eth_rx() > 0)
+		{
 			HttpdHandler();
 		}
 
 		// if CTRL+C was pressed -> return!
-		if(ctrlc()){
+		if (ctrlc())
+		{
 			eth_halt();
 
 			// reset global variables to default state
@@ -1973,11 +2058,12 @@ int NetLoopHttpd(void){
 			eth_set_last_protocol(BOOTP);
 
 			printf("\nWeb failsafe mode aborted!\n\n");
-			return(-1);
+			return (-1);
 		}
 
 		// until upload is not completed, get back to the start of the loop
-		if(!webfailsafe_ready_for_upgrade){
+		if (!webfailsafe_ready_for_upgrade)
+		{
 			continue;
 		}
 
@@ -1988,24 +2074,25 @@ int NetLoopHttpd(void){
 		do_http_progress(WEBFAILSAFE_PROGRESS_UPLOAD_READY);
 
 		// try to make upgrade!
-		if(do_http_upgrade(NetBootFileXferSize, webfailsafe_upgrade_type) >= 0){
+		if (do_http_upgrade(NetBootFileXferSize, webfailsafe_upgrade_type) >= 0)
+		{
 			milisecdelay(500);
 
 			do_http_progress(WEBFAILSAFE_PROGRESS_UPGRADE_READY);
 
-			//milisecdelay(500);
+			// milisecdelay(500);
 
 			/* reset the board */
-			if(webfailsafe_upgrade_type == WEBFAILSAFE_UPGRADE_TYPE_FIRMWARE){
-                char *argv[2];
-                char bootk_addr[20];
-                sprintf(bootk_addr,"0x%X",CFG_KERN_ADDR);
-                argv[1] = &bootk_addr[0];
-                do_bootm(p_gmdtp,0,2,argv);
-            }
-                
+			if (webfailsafe_upgrade_type == WEBFAILSAFE_UPGRADE_TYPE_FIRMWARE)
+			{
+				char *argv[2];
+				char bootk_addr[20];
+				sprintf(bootk_addr, "0x%X", CFG_KERN_ADDR);
+				argv[1] = &bootk_addr[0];
+				do_bootm(p_gmdtp, 0, 2, argv);
+			}
 
-            do_reset(NULL, 0, 0, NULL);
+			do_reset(NULL, 0, 0, NULL);
 		}
 		break;
 	}
@@ -2018,5 +2105,5 @@ int NetLoopHttpd(void){
 	NetBootFileXferSize = 0;
 
 	do_http_progress(WEBFAILSAFE_PROGRESS_UPGRADE_FAILED);
-	return(-1);
+	return (-1);
 }
