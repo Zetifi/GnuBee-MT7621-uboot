@@ -1,14 +1,11 @@
-**No Longer maintained Please use GnuBee_PCx_uboot**
+# U-Boot for ZetiBoard
 
-U-Boot modification for MT7621 Devices
-==========
-Forked from pinney/MT7621-u-boot-mod @ commit 5688587b9031073d95c8af5e878cf6ce8f3c0962
+Forked from gnubee-git/GnuBee-MT7621-uboot
 
-**Flashing the bootloader is risky.**
+## How to build
+Use docker image:
+- Local build docker image: `docker build -f Dockerfile -t ghcr.io/zetifi/uboot-builder`
+- Get docker image from github registry: `docker pull ghcr.io/zetifi/uboot-builder`
 
-**If you like expensive bricks proceed without caution.**
-
-**You will need a working Serial Console and a TFTP server.**
-
-From the Serial Console (UART) : Option 9
-
+Build:
+`docker run --rm -it -v .:/home/build --platform linux/386 ghcr.io/zetifi/uboot-builder /bin/bash -c ./build.sh`
