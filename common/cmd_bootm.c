@@ -159,6 +159,7 @@ extern void lynxkdi_boot( image_header_t * );
 
 image_header_t header;
 ulong load_addr =  CFG_LOAD_ADDR;		/* Default Load Address */
+ulong sys_bootflag =  0x5A5A5A5A;		/* Default Load Address */
 
 static inline void mips_cache_set(u32 v)
 {

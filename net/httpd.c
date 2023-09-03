@@ -25,6 +25,8 @@ extern flash_info_t flash_info[];
 
 static int arptimer = 0;
 
+extern ulong sys_bootflag;
+
 void HttpdHandler(void){
 	int i;
 
@@ -82,10 +84,23 @@ int do_http_upgrade(const ulong size, const int upgrade_type){
         OLED_Clear_page(6);
         OLED_ShowString(0,2,"DownLoad:100%");
 #endif
-        ret = raspi_erase_write((unsigned char*)(WEBFAILSAFE_UPLOAD_RAM_ADDRESS),WEBFAILSAFE_UPLOAD_KERNEL_ADDRESS,size);
+
+		unsigned int upgrade_flash_offset;
+		
+		if (0x5A5A5A5A == sys_bootflag) {
+			upgrade_flash_offset = 0x50000;
+		} else if (0xA5A5A5A5 == sys_bootflag) {
+			upgrade_flash_offset = 0xFE0000;
+		} else {
+			upgrade_flash_offset = 0x50000;
+		}
+		
+        //ret = raspi_erase_write((unsigned char*)(WEBFAILSAFE_UPLOAD_RAM_ADDRESS),WEBFAILSAFE_UPLOAD_KERNEL_ADDRESS,size);
+        ret = raspi_erase_write((unsigned char*)(WEBFAILSAFE_UPLOAD_RAM_ADDRESS), upgrade_flash_offset, size);
 #ifdef OLED_1_3
-        if(ret == 0)
+        if(ret == 0) {
             OLED_ShowString(0,6,"Loading Fireware");
+        }
 #endif
         return ret; 
 	} else if(upgrade_type == WEBFAILSAFE_UPGRADE_TYPE_ART){

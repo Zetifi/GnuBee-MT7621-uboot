@@ -110,6 +110,7 @@ const char version_string[] =
 		U_BOOT_VERSION " (" __DATE__ " - " __TIME__ ")";
 
 extern ulong load_addr; /* Default Load Address */
+extern ulong sys_bootflag;
 
 unsigned long mips_cpu_feq;
 unsigned long mips_bus_feq;
@@ -1724,6 +1725,13 @@ void board_init_r(gd_t *id, ulong dest_addr)
 	{
 		load_addr = simple_strtoul(s, NULL, 16);
 	}
+
+	if ((s = getenv("bootflag")) != NULL)
+	{
+		sys_bootflag = simple_strtoul(s, NULL, 16);
+	}
+
+	
 #if (CONFIG_COMMANDS & CFG_CMD_NET)
 	if ((s = getenv("bootfile")) != NULL)
 	{
@@ -2181,7 +2189,14 @@ void board_init_r(gd_t *id, ulong dest_addr)
 		//         oled_load_banner();
 		// #endif
 		char *argv[2];
-		sprintf(addr_str, "0x%X", CFG_KERN_ADDR);
+		if (0x5A5A5A5A == sys_bootflag) {
+			sprintf(addr_str, "0x%X", CFG_KERN_ADDR_IMG_A);
+		} else if (0xA5A5A5A5 == sys_bootflag) {
+			sprintf(addr_str, "0x%X", CFG_KERN_ADDR_IMG_B);
+		} else {
+			// FIXME : handle incorrect bootflag in the uboot_env parameter
+			sprintf(addr_str, "0x%X", CFG_KERN_ADDR_IMG_A);
+		}
 		argv[1] = &addr_str[0];
 		printf("   \n3: System Boot system code via Flash.\n");
 		do_bootm(cmdtp, 0, 2, argv);
@@ -2294,7 +2309,15 @@ void board_init_r(gd_t *id, ulong dest_addr)
 
 			// bootm bc050000
 			argc = 2;
-			sprintf(addr_str, "0x%X", CFG_KERN_ADDR);
+			
+			if (0x5A5A5A5A == sys_bootflag) {
+				sprintf(addr_str, "0x%X", CFG_KERN_ADDR_IMG_A);
+			} else if (0xA5A5A5A5 == sys_bootflag) {
+				sprintf(addr_str, "0x%X", CFG_KERN_ADDR_IMG_B);
+			} else {
+				sprintf(addr_str, "0x%X", CFG_KERN_ADDR_IMG_A);
+			}
+			
 			argv[1] = &addr_str[0];
 			do_bootm(cmdtp, 0, argc, argv);
 			break;
