@@ -89,6 +89,7 @@ static int envmatch (uchar *, int);
 static const unsigned long baudrate_table[] = CFG_BAUDRATE_TABLE;
 #define	N_BAUDRATES (sizeof(baudrate_table) / sizeof(baudrate_table[0]))
 
+extern ulong sys_bootflag;
 
 /************************************************************************
  * Command interface: print one or all environment variables
@@ -202,6 +203,16 @@ int _do_setenv (int flag, int argc, char *argv[])
 			return 1;
 		}
 #endif
+
+		if (strcmp(argv[1],"bootflag") == 0) {
+			ulong flag = simple_strtoul(argv[2], NULL, 16);
+			if (0x5A5A5A5A != flag && 0xA5A5A5A5 != flag) {
+				printf("wrong flag, the bootflag can only be either 0x5A5A5A5A (for #img A) or 0xA5A5A5A5 (for #img B)\n");
+				return 1;
+			} else {
+				sys_bootflag = flag;
+			}
+		}
 
 		/* Check for console redirection */
 		if (strcmp(name,"stdin") == 0) {

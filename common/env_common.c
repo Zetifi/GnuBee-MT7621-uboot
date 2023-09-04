@@ -127,6 +127,9 @@ uchar default_environment[] = {
 #ifdef	CONFIG_LOADADDR
 	"loadaddr="	MK_STR(CONFIG_LOADADDR)		"\0"
 #endif
+#ifdef	CONFIG_BOOTFLAG
+	"bootflag="	MK_STR(CONFIG_BOOTFLAG)		"\0"
+#endif
 #ifdef  CONFIG_CLOCKS_IN_MHZ
 	"clocks_in_mhz=1\0"
 #endif
