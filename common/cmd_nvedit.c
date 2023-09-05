@@ -206,10 +206,11 @@ int _do_setenv (int flag, int argc, char *argv[])
 
 		if (strcmp(argv[1],"bootflag") == 0) {
 			ulong flag = simple_strtoul(argv[2], NULL, 16);
-			if (0x5A5A5A5A != flag && 0xA5A5A5A5 != flag) {
+			if (BOOT_FLAG_IMAGE_A != flag && BOOT_FLAG_IMAGE_B != flag) {
 				printf("wrong flag, the bootflag can only be either 0x5A5A5A5A (for #img A) or 0xA5A5A5A5 (for #img B)\n");
 				return 1;
 			} else {
+				// If the bootflag is invalid, then proceed to the image A
 				sys_bootflag = flag;
 			}
 		}

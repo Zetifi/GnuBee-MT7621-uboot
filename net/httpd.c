@@ -87,12 +87,13 @@ int do_http_upgrade(const ulong size, const int upgrade_type){
 
 		unsigned int upgrade_flash_offset;
 		
-		if (0x5A5A5A5A == sys_bootflag) {
-			upgrade_flash_offset = 0x50000;
-		} else if (0xA5A5A5A5 == sys_bootflag) {
-			upgrade_flash_offset = 0xFE0000;
+		if (BOOT_FLAG_IMAGE_A == sys_bootflag) {
+			upgrade_flash_offset = CFG_FLASH_OFFSET_IMG_A;
+		} else if (BOOT_FLAG_IMAGE_B == sys_bootflag) {
+			upgrade_flash_offset = CFG_FLASH_OFFSET_IMG_B;
 		} else {
-			upgrade_flash_offset = 0x50000;
+			// if the bootflag is invalid, then start with the image A
+			upgrade_flash_offset = CFG_FLASH_OFFSET_IMG_A;
 		}
 		
         //ret = raspi_erase_write((unsigned char*)(WEBFAILSAFE_UPLOAD_RAM_ADDRESS),WEBFAILSAFE_UPLOAD_KERNEL_ADDRESS,size);
