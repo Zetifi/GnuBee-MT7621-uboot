@@ -39,6 +39,14 @@ extern unsigned int CFG_BLOCKSIZE;
 #endif
 
 #include "../../autoconf.h"
+
+#ifndef __STR
+#define __STR(x) #x
+#endif
+#ifndef STR
+#define STR(x) __STR(x)
+#endif
+
 // #define DEBUG				1
 // #define ET_DEBUG
 #define CONFIG_RT2880_ETH 1 /* Enable built-in 10/100 Ethernet */
@@ -107,7 +115,7 @@ extern unsigned int CFG_BLOCKSIZE;
 
 // #define	CONFIG_TIMESTAMP		/* Print image info with timestamp */
 
-#undef CONFIG_BOOTARGS
+//#undef CONFIG_BOOTARGS
 
 #define CONFIG_BOOTCOMMAND "tftp" //"run flash_self"
 
@@ -349,12 +357,15 @@ extern unsigned int CFG_BLOCKSIZE;
 #endif
 #endif
 
-// bootflag A: 0x5A5A5A5A (default);   bootflag B: 0xA5A5A5A5
-#define BOOT_FLAG_IMAGE_A     0x5A5A5A5A
-#define BOOT_FLAG_IMAGE_B     0xA5A5A5A5 
-#define CONFIG_BOOTFLAG       BOOT_FLAG_IMAGE_A
+#define BOOT_FLAG_IMAGE_A        0x5A5A5A5A
+#define BOOT_FLAG_IMAGE_B        0xA5A5A5A5 
+#define CONFIG_BOOTFLAG          BOOT_FLAG_IMAGE_A
+#define BOOTARGS_BOOT_A          "osflag=" STR(BOOT_FLAG_IMAGE_A) "console=ttyS0,57600 root=/dev/mtdblock4"
+#define BOOTARGS_BOOT_B          "osflag=" STR(BOOT_FLAG_IMAGE_B) "console=ttyS0,57600 root=/dev/mtdblock8"
+#define CONFIG_BOOTARGS          BOOTARGS_BOOT_A
 
-#define CFG_ENV_SECT_SIZE CFG_CONFIG_SIZE
+#define CFG_ENV_SECT_SIZE        CFG_CONFIG_SIZE
+
 #define CFG_ENV_SIZE 0x1000
 
 #if defined(SMALL_UBOOT_PARTITION)
