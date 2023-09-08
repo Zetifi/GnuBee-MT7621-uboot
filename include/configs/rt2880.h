@@ -39,6 +39,14 @@ extern unsigned int CFG_BLOCKSIZE;
 #endif
 
 #include "../../autoconf.h"
+
+#ifndef __STR
+#define __STR(x) #x
+#endif
+#ifndef STR
+#define STR(x) __STR(x)
+#endif
+
 // #define DEBUG				1
 // #define ET_DEBUG
 #define CONFIG_RT2880_ETH 1 /* Enable built-in 10/100 Ethernet */
