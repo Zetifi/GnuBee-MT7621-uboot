@@ -365,6 +365,7 @@ extern unsigned int CFG_BLOCKSIZE;
 #define CONFIG_BOOTARGS          BOOTARGS_BOOT_A
 
 #define CFG_ENV_SECT_SIZE        CFG_CONFIG_SIZE
+
 #define CFG_ENV_SIZE 0x1000
 
 #if defined(SMALL_UBOOT_PARTITION)
