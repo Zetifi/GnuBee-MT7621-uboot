@@ -272,7 +272,8 @@ static struct chip_info chips_data [] = {
 	{ "EN25Q64",		0x1c, 0x30171c30, 64 * 1024, 128,  0 },
 	{ "W25Q32BV",		0xef, 0x40160000, 64 * 1024, 64,  0 },
 	{ "W25Q64BV",		0xef, 0x40170000, 64 * 1024, 128,  0 }, //S25FL064K
-	{ "W25Q128BV",		0xef, 0x40180000, 64 * 1024, 256,  0 },
+	{ "W25Q128BV",		0xef, 0x40180000, 64 * 1024, 256,  0 }, //W25Q128FV
+	{ "W25Q256FV",		0xef, 0x40190000, 64 * 1024, 512, 1 }, // The SPI bug that causes corrupted flash
 	{ "GD25Q32B",		0xC8, 0x40160000, 64 * 1024, 64,  0 },
 	{ "GD25Q64B",		0xC8, 0x40170000, 64 * 1024, 128,  0 },
 	{ "GD25Q128C",		0xC8, 0x40180000, 64 * 1024, 256,  0 },
@@ -961,7 +962,7 @@ static int raspi_erase_sector(u32 offset)
 struct chip_info *chip_prob(void)
 {
 	struct chip_info *info, *match;
-	u8 buf[5];
+	u8 buf[5] = {0};
 	u32 jedec, weight;
 	int i;
 
